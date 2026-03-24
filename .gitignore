@@ -1,0 +1,13 @@
+node_modules/
+dist/
+
+# Real secrets — never commit
+.env
+.mcp.json
+
+# Pipeline run output
+data/runs/
+data/checkpoints/*.json
+
+# macOS
+.DS_Store

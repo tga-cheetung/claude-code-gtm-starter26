@@ -1,0 +1,24 @@
+{
+  "name": "demo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "scrape":   "npx tsx scripts/linkedin-pipeline/01-scrape.ts",
+    "filter":   "npx tsx scripts/linkedin-pipeline/02-filter.ts",
+    "classify": "npx tsx scripts/linkedin-pipeline/03-classify.ts",
+    "enrich":   "npx tsx scripts/linkedin-pipeline/04-enrich.ts",
+    "verify":   "npx tsx scripts/linkedin-pipeline/05-verify.ts",
+    "copy":     "npx tsx scripts/linkedin-pipeline/06-copy.ts",
+    "push":     "npx tsx scripts/linkedin-pipeline/07-push-smartlead.ts",
+    "pipeline": "npx tsx scripts/linkedin-pipeline/pipeline.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "dotenv": "^16.4.0",
+    "openai": "^4.77.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  }
+}
