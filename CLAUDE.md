@@ -70,7 +70,7 @@ npm run pipeline -- --dry-run       # Stop before push (safe for testing)
 
 | Skill | When to use |
 |-------|-------------|
-| `scrape-post-eg` | Given a post URL → scrape all reactors/commenters → filter by ICP → write to Google Sheet |
+| `scrape-post-eg` | Given a post URL + Google Sheet URL → scrape all reactors/commenters → filter by ICP → write to sheet |
 
 ---
 
@@ -84,6 +84,15 @@ Write pattern (always clear first to avoid stale data):
 gws sheets spreadsheets values clear --params '{"spreadsheetId": "SHEET_ID", "range": "Sheet1"}'
 gws sheets spreadsheets values update --params '{"spreadsheetId": "SHEET_ID", "range": "Sheet1!A1", "valueInputOption": "RAW"}' --json '{"values": [...]}'
 ```
+
+---
+
+## Learnings
+
+Gotchas and debugging notes from previous sessions live in `learnings.md` at the repo root.
+
+- **When stuck or getting unexpected results:** Read `learnings.md` first. It likely documents the exact issue.
+- **When you discover a significant gotcha** (wrong field names, API quirks, broken assumptions, workarounds): Append it to `learnings.md` so the next session doesn't hit the same wall.
 
 ---
 
