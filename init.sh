@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
 # Claude Code for GTM — Init Script
-# Sets up your environment for Session 1.
-# Run: bash init.sh
+# Run:  bash init.sh              (Session 1 setup)
+#       bash init.sh --session=3  (add Session 3 keys)
+#       bash init.sh --session=5  (add Session 5 keys)
+# Safe to re-run — existing keys are never overwritten.
 # ─────────────────────────────────────────────────────────────────────────────
 
 set -e
@@ -18,9 +20,20 @@ PASS="${GREEN}✓${NC}"
 WARN="${YELLOW}⚠${NC}"
 FAIL="${RED}✗${NC}"
 
+# ── Parse --session flag ───────────────────────────────────────────────────────
+SESSION=1
+for arg in "$@"; do
+  case $arg in
+    --session=*) SESSION="${arg#*=}" ;;
+  esac
+done
+
 echo ""
 echo -e "${BOLD}Claude Code for GTM — Setup${NC}"
 echo -e "${DIM}thegtmarchitects.com${NC}"
+if [ "$SESSION" -gt 1 ]; then
+  echo -e "${DIM}Adding keys for Session ${SESSION}${NC}"
+fi
 echo ""
 
 # ── 1. Node.js ────────────────────────────────────────────────────────────────
@@ -46,12 +59,10 @@ if [ ! -f .env ]; then
   cp .env.example .env
 fi
 
-# Helper: read a value from .env
 get_env_value() {
   grep "^$1=" .env 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'"
 }
 
-# Helper: write/update a value in .env
 set_env_value() {
   local key=$1
   local value=$2
@@ -70,6 +81,7 @@ prompt_for_key() {
   local key=$1
   local label=$2
   local url=$3
+  local session_hint=$4   # e.g. "skipped — you'll need this for Session 3"
   local current
   current=$(get_env_value "$key")
 
@@ -85,20 +97,56 @@ prompt_for_key() {
   read -r value
   if [ -n "$value" ]; then
     set_env_value "$key" "$value"
-    echo -e "${PASS} ${key} saved to .env"
+    echo -e "${PASS} ${key} saved"
   else
-    echo -e "${WARN} ${key} skipped — you'll need this before Session 1"
+    echo -e "${WARN} Skipped — ${session_hint}"
   fi
 }
 
+# ── Session 1 keys (always shown) ─────────────────────────────────────────────
 echo ""
-echo -e "${BOLD}── API Keys (Session 1) ──────────────────────────────────${NC}"
-echo -e "${DIM}   Keys for later sessions can be added to .env as you go.${NC}"
+echo -e "${BOLD}── Session 1 ─────────────────────────────────────────────${NC}"
 
-prompt_for_key "APIFY_API_KEY"      "Apify API Key"      "https://console.apify.com/account/integrations"
-prompt_for_key "ANTHROPIC_API_KEY"  "Anthropic API Key"  "https://console.anthropic.com/keys"
+prompt_for_key "APIFY_API_KEY"     "Apify API Key"     "https://console.apify.com/account/integrations"  "needed before Session 1"
+prompt_for_key "ANTHROPIC_API_KEY" "Anthropic API Key" "https://console.anthropic.com/keys"              "needed before Session 1"
 
-# ── 4. .mcp.json ─────────────────────────────────────────────────────────────
+# ── Session 3 keys ────────────────────────────────────────────────────────────
+if [ "$SESSION" -ge 3 ]; then
+  echo ""
+  echo -e "${BOLD}── Session 3 — Enrichment ────────────────────────────────${NC}"
+
+  prompt_for_key "LEADMAGIC_API_KEY"  "LeadMagic API Key"  "https://app.leadmagic.io → API Keys"  "needed before Session 3"
+  prompt_for_key "PROSPEO_API_KEY"    "Prospeo API Key"    "https://app.prospeo.io → API"         "needed before Session 3"
+  prompt_for_key "PERPLEXITY_API_KEY" "Perplexity API Key" "https://www.perplexity.ai/settings/api" "needed before Session 3"
+fi
+
+# ── Session 4 keys ────────────────────────────────────────────────────────────
+if [ "$SESSION" -ge 4 ]; then
+  echo ""
+  echo -e "${BOLD}── Session 4 — Copy Engine ───────────────────────────────${NC}"
+
+  prompt_for_key "OPENAI_API_KEY" "OpenAI API Key" "https://platform.openai.com/api-keys" "needed before Session 4"
+fi
+
+# ── Session 5 keys ────────────────────────────────────────────────────────────
+if [ "$SESSION" -ge 5 ]; then
+  echo ""
+  echo -e "${BOLD}── Session 5 — Campaign Launch ───────────────────────────${NC}"
+
+  prompt_for_key "SMARTLEAD_API_KEY"      "Smartlead API Key"        "https://app.smartlead.ai/app/settings/api"  "needed before Session 5"
+  prompt_for_key "REVYOPS_API_KEY"        "RevyOps API Key"          "https://app.revyops.com/api/docs"           "needed before Session 5"
+  prompt_for_key "REVYOPS_MASTER_API_KEY" "RevyOps Master API Key"   "https://app.revyops.com/api/docs"           "needed before Session 5"
+fi
+
+# ── Session 6 keys ────────────────────────────────────────────────────────────
+if [ "$SESSION" -ge 6 ]; then
+  echo ""
+  echo -e "${BOLD}── Session 6 — Production Deploy ─────────────────────────${NC}"
+
+  prompt_for_key "SLACK_BOT_TOKEN" "Slack Bot Token" "https://api.slack.com/apps → OAuth & Permissions" "needed before Session 6"
+fi
+
+# ── .mcp.json ─────────────────────────────────────────────────────────────────
 echo ""
 if [ ! -f .mcp.json ]; then
   APIFY_KEY=$(get_env_value "APIFY_API_KEY")
@@ -107,13 +155,13 @@ if [ ! -f .mcp.json ]; then
     echo -e "${PASS} .mcp.json configured"
   else
     cp .mcp.json.example .mcp.json
-    echo -e "${WARN} .mcp.json created — add your APIFY_API_KEY to .env and re-run to complete"
+    echo -e "${WARN} .mcp.json created — re-run after adding APIFY_API_KEY to complete"
   fi
 else
   echo -e "${PASS} .mcp.json already exists"
 fi
 
-# ── 5. gws CLI ────────────────────────────────────────────────────────────────
+# ── CLI Tools ─────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}── CLI Tools ─────────────────────────────────────────────${NC}"
 
@@ -127,26 +175,36 @@ else
   echo -e "   ${DIM}Or run: npm install -g @googleworkspace/cli && gws auth login${NC}"
 fi
 
-# ── 6. Summary ────────────────────────────────────────────────────────────────
+if [ "$SESSION" -ge 5 ]; then
+  if command -v smartlead &> /dev/null; then
+    echo -e "${PASS} Smartlead CLI installed"
+  else
+    echo -e "${WARN} Smartlead CLI not found"
+    echo -e "   ${DIM}Run: npm install -g @smartlead/cli${NC}"
+  fi
+fi
+
+# ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}─────────────────────────────────────────────────────────${NC}"
 echo ""
 
-APIFY_FINAL=$(get_env_value "APIFY_API_KEY")
-ANTHROPIC_FINAL=$(get_env_value "ANTHROPIC_API_KEY")
-
 READY=true
 
-[ -z "$APIFY_FINAL" ]    && echo -e "${FAIL} APIFY_API_KEY missing" && READY=false
-[ -z "$ANTHROPIC_FINAL" ] && echo -e "${FAIL} ANTHROPIC_API_KEY missing" && READY=false
-[ "$GWS_OK" = false ]    && echo -e "${WARN} gws CLI not installed (needed for Google Sheets in Session 1)"
+[ -z "$(get_env_value APIFY_API_KEY)" ]     && echo -e "${FAIL} APIFY_API_KEY missing"     && READY=false
+[ -z "$(get_env_value ANTHROPIC_API_KEY)" ] && echo -e "${FAIL} ANTHROPIC_API_KEY missing" && READY=false
+[ "$GWS_OK" = false ] && echo -e "${WARN} gws CLI not installed (needed for Google Sheets in Session 1)"
 
 if [ "$READY" = true ]; then
-  echo -e "${GREEN}${BOLD}Ready for Session 1.${NC}"
+  echo -e "${GREEN}${BOLD}Ready for Session ${SESSION}.${NC}"
   echo ""
   echo -e "   Open Claude Code in this folder:"
   echo -e "   ${DIM}VS Code: Ctrl+Shift+P → \"Open Claude Code\"${NC}"
   echo -e "   ${DIM}Terminal: claude${NC}"
+  if [ "$SESSION" -lt 6 ]; then
+    echo ""
+    echo -e "   ${DIM}Before Session $((SESSION + 1)): git pull && bash init.sh --session=$((SESSION + 1))${NC}"
+  fi
 else
   echo ""
   echo -e "${YELLOW}Almost there.${NC} Fix the items above and re-run ${DIM}bash init.sh${NC}"
