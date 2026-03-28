@@ -95,3 +95,111 @@ Otherwise you get the author's replies to every comment, which inflates the data
 Verified (2026-03-23): `https://www.linkedin.com/posts/kenny-damian-90aba221a_ive-spent-600-hours-inside-claude-code-share-7441843439735865344-toe2`
 - 49 reactions, 18 comments → 62 unique people after cleaning
 - Good size for testing (not too small, not slow)
+
+---
+
+# Learnings: Deepline Enrich (Session 2)
+
+Things that broke when building the ICP filter + scoring + dedup pipeline with `deepline enrich`. Read this before writing any `run_javascript` or `call_local_claude_code` steps.
+
+---
+
+## Deepline tool names differ from skill docs
+
+The skill docs reference `call_ai` and `run_javascript`. The actual canonical tool IDs are:
+- `call_local_claude_code` (not `call_ai`)
+- `run_javascript` (this one matches)
+
+Always run `deepline tools search <query>` to confirm the tool ID before using it. If it doesn't resolve, you'll get: `Could not resolve tool reference`.
+
+---
+
+## `run_javascript` doesn't have `input_data` — use `{{template_variables}}`
+
+There is no global `input_data` object in `run_javascript`. Row data comes through Deepline's `{{column_name}}` template variables, which get interpolated into the `code` string before execution.
+
+**Wrong:**
+```js
+const headline = input_data.headline; // input_data is not defined
+```
+
+**Right:**
+```js
+const headline = `{{headline}}`;
+```
+
+---
+
+## `run_javascript` doesn't inherit `.env` variables
+
+`process.env` exists in the sandbox but only has system-level vars (HOME, HOMEBREW_PREFIX, etc). It does NOT load project `.env` files. `export VAR=value` in the same shell command works for `deepline tools execute` but NOT for `deepline enrich` (the enrich worker spawns separately).
+
+**Workaround:** Bake secrets directly into the `.js` file at runtime using a heredoc with shell variable substitution. The file is gitignored via `.claude/`.
+
+---
+
+## `run_javascript` requires async IIFE for `fetch`
+
+Top-level `await` is not supported. Wrap async code in an IIFE:
+
+```js
+return (async () => {
+  const r = await fetch(url, { headers: { 'x-api-key': key } });
+  const data = await r.json();
+  return JSON.stringify(data);
+})();
+```
+
+---
+
+## RevyOps base URL is `app.revyops.com/api`, not `api.revyops.com`
+
+`api.revyops.com` does not resolve (NXDOMAIN). The correct base URL is:
+```
+https://app.revyops.com/api/public/contacts-master-list
+```
+The master API key from `.env` (`REVYOPS_MASTER_API_KEY`) works. The `/api/` prefix is required — without it you get a 404.
+
+---
+
+## `--in-place` and `--output` cannot be used together
+
+Use `--output` for the first pass (creates the file), then `--in-place` for subsequent passes on that output. Never use both flags in the same command.
+
+---
+
+## Stale output files cause schema mismatch errors
+
+If you re-run with a different input file (e.g., adding a `revyops_dedup` column), the old output file has a different schema. Delete the output file before re-running:
+```bash
+rm -f data/runs/2026-03-27/03-scored.csv
+```
+
+---
+
+## Lock files block re-runs
+
+If a run is interrupted, a `.deepline.lock` directory persists and blocks the next run. Remove it:
+```bash
+rm -rf path/to/output.csv.deepline.lock
+```
+
+---
+
+## BYOK: `deepline keys set` doesn't exist — use the env file
+
+The BYOK docs (https://code.deepline.com/docs/features/bring-your-own-keys) describe `deepline keys set <provider> --key "..."` and a REST API at `/api/v2/keys`. Neither works in the current CLI version.
+
+**What works:** Add provider env vars directly to Deepline's own config file:
+```
+~/.local/deepline/code-deepline-com/.env
+```
+
+Example:
+```
+LEADMAGIC_API_KEY=your_key_here
+PROSPEO_API_KEY=your_key_here
+EXA_API_KEY=your_key_here
+```
+
+Deepline auto-detects these on the next command. Env var names must match exactly (see BYOK docs for the full list of 26 providers). Restart the backend after adding keys: `deepline backend stop --just-backend`.

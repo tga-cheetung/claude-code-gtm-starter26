@@ -9,5 +9,11 @@ dist/
 data/runs/
 data/checkpoints/*.json
 
+# Local tool caches
+.deepline/
+.firecrawl/
+.playwright-mcp/
+.vscode/
+
 # macOS
 .DS_Store

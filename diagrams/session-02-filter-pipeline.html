@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Session 2 — Filter Before You Spend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --tga-green: #0CDD78;
+    --tga-green-dark: #08A85C;
+    --tga-bg: #0A0A0A;
+    --tga-surface: #333333;
+    --tga-surface-soft: #1E1E1E;
+    --tga-text: #E5E5E5;
+    --tga-text-muted: #B3B3B3;
+    --tga-text-label: #8F8F8F;
+    --tga-orange: #FF6B35;
+    --tga-border: #2A2A2A;
+    --tga-disabled: #6B6B6B;
+    --tga-node-bg: #141414;
+    --tga-green-10: rgba(12, 221, 120, 0.1);
+    --tga-green-20: rgba(12, 221, 120, 0.2);
+    --tga-green-glow: rgba(12, 221, 120, 0.08);
+    --tga-blue: #3B82F6;
+    --tga-amber: #F59E0B;
+    --tga-purple: #8B5CF6;
+    --tga-font-heading: 'Poppins', sans-serif;
+    --tga-font-body: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--tga-bg);
+    color: var(--tga-text);
+    font-family: var(--tga-font-body);
+    min-height: 100vh;
+    padding: 48px 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .session-label {
+    font-family: var(--tga-font-body);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--tga-green);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .title {
+    font-family: var(--tga-font-heading);
+    font-size: 38px;
+    font-weight: 700;
+    color: var(--tga-text);
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .title span { color: var(--tga-green); }
+  .subtitle {
+    font-family: var(--tga-font-body);
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--tga-text-label);
+    max-width: 560px;
+    margin: 0 auto 10px;
+    line-height: 1.6;
+  }
+  .thesis-pill {
+    display: inline-block;
+    background: var(--tga-green-10);
+    border: 1px solid var(--tga-green-20);
+    color: var(--tga-green);
+    font-family: var(--tga-font-body);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 40px;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--tga-border);
+    margin-bottom: 40px;
+  }
+
+  /* ── WHY STRIP ── */
+  .why-strip {
+    background: var(--tga-node-bg);
+    border: 1px solid var(--tga-border);
+    border-left: 3px solid var(--tga-amber);
+    border-radius: 8px;
+    padding: 18px 24px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .why-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .why-content {}
+  .why-label {
+    font-family: var(--tga-font-body);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--tga-amber);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .why-text {
+    font-family: var(--tga-font-body);
+    font-size: 13px;
+    color: var(--tga-text-muted);
+    line-height: 1.6;
+  }
+  .why-text strong { color: var(--tga-text); font-weight: 600; }
+
+  /* ── PIPELINE ── */
+  .pipeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 40px;
+  }
+
+  /* Input node */
+  .input-node {
+    background: var(--tga-surface-soft);
+    border: 2px solid var(--tga-green);
+    box-shadow: 0 0 20px var(--tga-green-glow);
+    border-radius: 10px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0;
+  }
+  .input-left {}
+  .input-eyebrow {
+    font-family: var(--tga-font-body);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--tga-green);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .input-title {
+    font-family: var(--tga-font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--tga-text);
+  }
+  .input-desc {
+    font-size: 12px;
+    color: var(--tga-text-label);
+    margin-top: 3px;
+  }
+  .input-badge {
+    background: var(--tga-green-10);
+    border: 1px solid var(--tga-green-20);
+    color: var(--tga-green);
+    font-family: var(--tga-font-heading);
+    font-size: 28px;
+    font-weight: 700;
+    padding: 8px 20px;
+    border-radius: 8px;
+    text-align: center;
+    line-height: 1;
+  }
+  .input-badge small {
+    display: block;
+    font-family: var(--tga-font-body);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+    color: var(--tga-green);
+  }
+
+  /* Connector */
+  .connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 0;
+  }
+  .connector-line {
+    width: 2px;
+    height: 28px;
+    background: var(--tga-green);
+    opacity: 0.5;
+  }
+  .connector-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--tga-green);
+    opacity: 0.7;
+  }
+
+  /* Step cards */
+  .step-card {
+    background: var(--tga-surface-soft);
+    border: 1px solid var(--tga-border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    position: relative;
+  }
+  .step-card.blue  { border-left: 3px solid var(--tga-blue); }
+  .step-card.purple { border-left: 3px solid var(--tga-purple); }
+  .step-card.green { border-left: 3px solid var(--tga-green); }
+
+  .step-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .step-meta {}
+  .step-number {
+    font-family: var(--tga-font-body);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .step-card.blue  .step-number { color: var(--tga-blue); }
+  .step-card.purple .step-number { color: var(--tga-purple); }
+  .step-card.green .step-number { color: var(--tga-green); }
+
+  .step-title {
+    font-family: var(--tga-font-heading);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--tga-text);
+  }
+  .step-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .badge {
+    font-family: var(--tga-font-body);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .badge-tool {
+    background: #1a1a2e;
+    border: 1px solid #2d2d5e;
+    color: #7C9FFF;
+  }
+  .badge-free {
+    background: var(--tga-green-10);
+    border: 1px solid var(--tga-green-20);
+    color: var(--tga-green);
+  }
+
+  .step-body {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .step-desc {
+    flex: 1;
+  }
+  .step-desc p {
+    font-size: 13px;
+    color: var(--tga-text-muted);
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  .step-outputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+  }
+  .output-chip {
+    background: var(--tga-node-bg);
+    border: 1px solid var(--tga-border);
+    color: var(--tga-text-label);
+    font-family: var(--tga-font-body);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+  }
+  .step-card.blue  .output-chip { border-color: rgba(59, 130, 246, 0.25); color: #7C9FFF; }
+  .step-card.purple .output-chip { border-color: rgba(139, 92, 246, 0.25); color: #B39DFF; }
+  .step-card.green .output-chip { border-color: rgba(12, 221, 120, 0.25); color: #6EFAAF; }
+
+  /* ── FUNNEL RESULTS ── */
+  .section-header {
+    margin-bottom: 20px;
+  }
+  .section-label {
+    font-family: var(--tga-font-body);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--tga-text-label);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .section-title {
+    font-family: var(--tga-font-heading);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--tga-text);
+  }
+
+  .funnel-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .funnel-card {
+    background: var(--tga-node-bg);
+    border: 1px solid var(--tga-border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .funnel-card.highlight {
+    border-color: rgba(12, 221, 120, 0.3);
+    background: rgba(12, 221, 120, 0.04);
+  }
+  .funnel-number {
+    font-family: var(--tga-font-heading);
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .funnel-card.highlight .funnel-number { color: var(--tga-green); }
+  .funnel-card:not(.highlight) .funnel-number { color: var(--tga-text); }
+  .funnel-pct {
+    font-family: var(--tga-font-body);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--tga-text-label);
+    margin-bottom: 6px;
+  }
+  .funnel-label {
+    font-family: var(--tga-font-body);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--tga-text-label);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    line-height: 1.4;
+  }
+  .funnel-card.highlight .funnel-label { color: var(--tga-green); }
+
+  /* ── BENEFIT BLOCK ── */
+  .benefit-block {
+    background: var(--tga-node-bg);
+    border: 1px solid var(--tga-border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 40px;
+  }
+  .benefit-title {
+    font-family: var(--tga-font-heading);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--tga-text);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .benefit-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 14px;
+    background: var(--tga-green);
+    border-radius: 2px;
+  }
+  .benefit-row {
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+  .benefit-col {
+    background: var(--tga-surface-soft);
+    border: 1px solid var(--tga-border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .benefit-col.bad { border-left: 3px solid #EF4444; }
+  .benefit-col.good { border-left: 3px solid var(--tga-green); }
+  .benefit-col-label {
+    font-family: var(--tga-font-body);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .benefit-col.bad .benefit-col-label { color: #EF4444; }
+  .benefit-col.good .benefit-col-label { color: var(--tga-green); }
+  .benefit-col p {
+    font-size: 12px;
+    color: var(--tga-text-muted);
+    line-height: 1.6;
+  }
+  .benefit-col p strong { color: var(--tga-text); font-weight: 600; }
+  .benefit-vs {
+    text-align: center;
+    font-family: var(--tga-font-heading);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--tga-text-label);
+  }
+
+  /* ── TOOLS ROW ── */
+  .tools-row {
+    background: var(--tga-node-bg);
+    border: 1px solid var(--tga-border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+  .tools-label {
+    font-family: var(--tga-font-body);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--tga-text-label);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    margin-right: 4px;
+  }
+  .tool-chip {
+    background: var(--tga-surface-soft);
+    border: 1px solid var(--tga-border);
+    color: var(--tga-text-muted);
+    font-family: var(--tga-font-body);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 6px;
+  }
+  .tool-chip.green {
+    border-color: rgba(12, 221, 120, 0.2);
+    color: var(--tga-green);
+    background: var(--tga-green-10);
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center;
+    font-family: var(--tga-font-body);
+    font-size: 13px;
+    color: var(--tga-disabled);
+  }
+  .footer strong { color: var(--tga-text-label); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="session-label">RevOps AI Curriculum · Session 2 of 6</div>
+  <h1 class="title">Filter Before You <span>Spend</span></h1>
+  <p class="subtitle">ICP qualification and AI scoring — before a single enrichment dollar is committed.</p>
+  <div class="thesis-pill">$0 in API costs · 97 leads scored · enrichment-ready output</div>
+</div>
+
+<div class="divider"></div>
+
+<!-- WHY THIS MATTERS -->
+<div class="why-strip">
+  <div class="why-icon">⚡</div>
+  <div class="why-content">
+    <div class="why-label">The Core Principle</div>
+    <div class="why-text">
+      Email enrichment costs money — per contact, per API call. If you enrich 97 raw LinkedIn engagers, you'll pay for 60+ people who are agency owners, ghostwriters, and service providers who will never buy. <strong>Session 2 is the gate</strong> that runs before any paid enrichment: it qualifies, scores, and deduplicates for free — so Session 3 only spends on leads worth it.
+    </div>
+  </div>
+</div>
+
+<!-- PIPELINE -->
+<div class="pipeline">
+
+  <!-- Input -->
+  <div class="input-node">
+    <div class="input-left">
+      <div class="input-eyebrow">Session 1 Output · Input</div>
+      <div class="input-title">LinkedIn Post Engagers</div>
+      <div class="input-desc">Scraped via Apify · Name, Headline, LinkedIn URL, Engagement type</div>
+    </div>
+    <div class="input-badge">97<small>raw leads</small></div>
+  </div>
+
+  <!-- Connector -->
+  <div class="connector">
+    <div class="connector-line"></div>
+    <div class="connector-dot"></div>
+    <div class="connector-line"></div>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="step-card blue">
+    <div class="step-header">
+      <div class="step-meta">
+        <div class="step-number">Step 01</div>
+        <div class="step-title">Headline Filter</div>
+      </div>
+      <div class="step-badges">
+        <span class="badge badge-tool">run_javascript</span>
+        <span class="badge badge-free">Free · No API</span>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="step-desc">
+        <p>Regex-based pass/fail against the LinkedIn headline. Requires at least one founder signal (CEO, Co-founder, Founder). Excludes non-ICP roles regardless of founder title: Founder's Office staff, ghostwriters, SDRs, account managers, LinkedIn ad specialists.</p>
+        <div class="step-outputs">
+          <span class="output-chip">icp_headline_pass</span>
+          <span class="output-chip">headline_filter_reason</span>
+          <span class="output-chip">has_saas_signal</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="connector-line"></div>
+    <div class="connector-dot"></div>
+    <div class="connector-line"></div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step-card purple">
+    <div class="step-header">
+      <div class="step-meta">
+        <div class="step-number">Step 02</div>
+        <div class="step-title">AI ICP Scoring</div>
+      </div>
+      <div class="step-badges">
+        <span class="badge badge-tool">Claude Haiku</span>
+        <span class="badge badge-free">Free · No Credits</span>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="step-desc">
+        <p>Claude reads each headline and scores ICP fit 0–10 against the Northbound ICP: B2B SaaS founders at $0–10M ARR, pre-seed to Series A, where the founder IS the GTM team. Catches nuance keywords can't — an "AI-Native GTM Agency" founder scores 2/10 even with strong SaaS signals, because they're a service provider.</p>
+        <div class="step-outputs">
+          <span class="output-chip">score</span>
+          <span class="output-chip">score_label</span>
+          <span class="output-chip">fit_band</span>
+          <span class="output-chip">rationale</span>
+          <span class="output-chip">is_saas_founder</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="connector-line"></div>
+    <div class="connector-dot"></div>
+    <div class="connector-line"></div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step-card green">
+    <div class="step-header">
+      <div class="step-meta">
+        <div class="step-number">Step 03</div>
+        <div class="step-title">RevyOps Dedup Check</div>
+      </div>
+      <div class="step-badges">
+        <span class="badge badge-tool">run_javascript</span>
+        <span class="badge badge-free">Free · BYO API Key</span>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="step-desc">
+        <p>Checks every LinkedIn URL against the RevyOps master contacts list before queueing for enrichment. Prevents re-enriching leads already in the CRM — or worse, re-sending cold outreach to someone already mid-sequence. Zero Deepline credits; calls RevyOps REST API directly.</p>
+        <div class="step-outputs">
+          <span class="output-chip">is_duplicate</span>
+          <span class="output-chip">revyops_status</span>
+          <span class="output-chip">revyops_contact_id</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FUNNEL RESULTS -->
+<div class="section-header">
+  <div class="section-label">Pipeline Output</div>
+  <div class="section-title">What 97 Engagers Became</div>
+</div>
+
+<div class="funnel-grid">
+  <div class="funnel-card">
+    <div class="funnel-number">97</div>
+    <div class="funnel-pct">100%</div>
+    <div class="funnel-label">Raw engagers in</div>
+  </div>
+  <div class="funnel-card">
+    <div class="funnel-number" style="color: var(--tga-blue);">78</div>
+    <div class="funnel-pct" style="color: var(--tga-blue);">80%</div>
+    <div class="funnel-label">Passed headline filter</div>
+  </div>
+  <div class="funnel-card highlight">
+    <div class="funnel-number">12</div>
+    <div class="funnel-pct">12%</div>
+    <div class="funnel-label">Strong Fit 8+ / 10</div>
+  </div>
+  <div class="funnel-card">
+    <div class="funnel-number" style="color: var(--tga-text-label);">0</div>
+    <div class="funnel-pct" style="color: var(--tga-text-label);">0%</div>
+    <div class="funnel-label">Already in RevyOps</div>
+  </div>
+</div>
+
+<!-- BENEFIT BLOCK -->
+<div class="benefit-block">
+  <div class="benefit-title">Why filter first? The cost math.</div>
+  <div class="benefit-row">
+    <div class="benefit-col bad">
+      <div class="benefit-col-label">Without Session 2</div>
+      <p>Enrich all <strong>97 leads</strong> at ~$0.05–0.15 per contact across LeadMagic + Prospeo + Exa. You spend <strong>$15–45 enriching agency founders, ghostwriters, and SDRs</strong> who will never convert. Those credits are gone — and your campaign is polluted with low-quality contacts.</p>
+    </div>
+    <div class="benefit-vs">VS</div>
+    <div class="benefit-col good">
+      <div class="benefit-col-label">With Session 2</div>
+      <p>Filter for free, then enrich only the <strong>~30 leads</strong> with 6+ ICP scores. Enrichment spend drops by <strong>60–70%</strong>. Every contact entering Session 3 has a clear ICP rationale attached, so copy personalisation in Session 4 has real signal to work from — not just a name and a job title.</p>
+    </div>
+  </div>
+</div>
+
+<!-- TOOLS ROW -->
+<div class="tools-row">
+  <span class="tools-label">Powered by</span>
+  <span class="tool-chip green">Deepline Enrich</span>
+  <span class="tool-chip">run_javascript</span>
+  <span class="tool-chip">Claude Haiku</span>
+  <span class="tool-chip">RevyOps API</span>
+  <span class="tool-chip">Google Sheets → CSV</span>
+  <span class="tool-chip">Deepline Playground</span>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <strong>The GTM Architects</strong> · RevOps AI Curriculum · Session 2 of 6
+</div>
+
+</body>
+</html>
