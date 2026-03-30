@@ -213,6 +213,7 @@
     position: relative;
   }
   .step-card.blue  { border-left: 3px solid var(--tga-blue); }
+  .step-card.orange { border-left: 3px solid var(--tga-orange); }
   .step-card.purple { border-left: 3px solid var(--tga-purple); }
   .step-card.green { border-left: 3px solid var(--tga-green); }
 
@@ -232,6 +233,7 @@
     margin-bottom: 4px;
   }
   .step-card.blue  .step-number { color: var(--tga-blue); }
+  .step-card.orange .step-number { color: var(--tga-orange); }
   .step-card.purple .step-number { color: var(--tga-purple); }
   .step-card.green .step-number { color: var(--tga-green); }
 
@@ -269,6 +271,11 @@
     background: var(--tga-green-10);
     border: 1px solid var(--tga-green-20);
     color: var(--tga-green);
+  }
+  .badge-orange {
+    background: rgba(255, 107, 53, 0.1);
+    border: 1px solid rgba(255, 107, 53, 0.2);
+    color: var(--tga-orange);
   }
 
   .step-body {
@@ -308,6 +315,7 @@
     border-radius: 6px;
   }
   .step-card.blue  .output-chip { border-color: rgba(59, 130, 246, 0.25); color: #7C9FFF; }
+  .step-card.orange .output-chip { border-color: rgba(255, 107, 53, 0.25); color: #FFB088; }
   .step-card.purple .output-chip { border-color: rgba(139, 92, 246, 0.25); color: #B39DFF; }
   .step-card.green .output-chip { border-color: rgba(12, 221, 120, 0.25); color: #6EFAAF; }
 
@@ -499,7 +507,7 @@
   <div class="session-label">RevOps AI Curriculum &middot; Session 2 of 6</div>
   <h1 class="title">Filter Before You <span>Spend</span></h1>
   <p class="subtitle">ICP qualification and AI scoring — before a single enrichment dollar is committed.</p>
-  <div class="thesis-pill">$0 in API costs &middot; free scoring &middot; enrichment-ready output</div>
+  <div class="thesis-pill">$0&ndash;$1 in API costs &middot; Exa-enriched scoring &middot; enrichment-ready output</div>
 </div>
 
 <div class="divider"></div>
@@ -566,27 +574,24 @@
     <div class="connector-line"></div>
   </div>
 
-  <!-- Step 2 -->
-  <div class="step-card purple">
+  <!-- Step 2 — Exa People Search (NEW) -->
+  <div class="step-card orange">
     <div class="step-header">
       <div class="step-meta">
         <div class="step-number">Step 02</div>
-        <div class="step-title">AI ICP Scoring</div>
+        <div class="step-title">Exa People Search</div>
       </div>
       <div class="step-badges">
-        <span class="badge badge-green">Claude Code</span>
-        <span class="badge badge-free">Free &middot; In-Context</span>
+        <span class="badge badge-orange">Exa MCP</span>
+        <span class="badge badge-green">Near-Free &middot; ~$0.01/query</span>
       </div>
     </div>
     <div class="step-body">
       <div class="step-desc">
-        <p>Claude reads each headline and scores ICP fit 0&ndash;10 against the target ICP. Catches nuance keywords can't — scores a &ldquo;Founder | GTM Agency&rdquo; as 2/10 because they're a service provider, not a product founder. Pilots first 10 rows for human review before scoring the rest.</p>
-        <div class="step-writes">Writes to: &ldquo;ICP Scored&rdquo; tab</div>
+        <p>Searches the web for each person who passed the headline filter. Returns a one-paragraph summary of who they are, what their company does, and any ICP-relevant signals. This context feeds into the AI scoring step &mdash; resolving ambiguity that headlines alone can&rsquo;t.</p>
+        <div class="step-writes">Writes to: adds exa_summary column to scored data</div>
         <div class="step-outputs">
-          <span class="output-chip">score</span>
-          <span class="output-chip">score_label</span>
-          <span class="output-chip">rationale</span>
-          <span class="output-chip">is_saas_founder</span>
+          <span class="output-chip">exa_summary</span>
         </div>
       </div>
     </div>
@@ -598,11 +603,44 @@
     <div class="connector-line"></div>
   </div>
 
-  <!-- Step 3 -->
-  <div class="step-card green">
+  <!-- Step 3 — AI ICP Scoring -->
+  <div class="step-card purple">
     <div class="step-header">
       <div class="step-meta">
         <div class="step-number">Step 03</div>
+        <div class="step-title">AI ICP Scoring</div>
+      </div>
+      <div class="step-badges">
+        <span class="badge badge-green">Claude Code</span>
+        <span class="badge badge-free">Free &middot; In-Context</span>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="step-desc">
+        <p>Claude scores ICP fit 0&ndash;10 using BOTH the LinkedIn headline AND the Exa web context. Catches nuance keywords can&rsquo;t &mdash; scores a &ldquo;Founder | GTM Agency&rdquo; as 2/10 because they&rsquo;re a service provider, not a product founder. The exa_summary resolves ambiguous headlines before scoring. Pilots first 10 rows for human review before scoring the rest.</p>
+        <div class="step-writes">Writes to: &ldquo;ICP Scored&rdquo; tab</div>
+        <div class="step-outputs">
+          <span class="output-chip">score</span>
+          <span class="output-chip">score_label</span>
+          <span class="output-chip">rationale</span>
+          <span class="output-chip">is_saas_founder</span>
+          <span class="output-chip">exa_summary</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="connector-line"></div>
+    <div class="connector-dot"></div>
+    <div class="connector-line"></div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step-card green">
+    <div class="step-header">
+      <div class="step-meta">
+        <div class="step-number">Step 04</div>
         <div class="step-title">RevyOps Dedup Check</div>
       </div>
       <div class="step-badges">
@@ -646,6 +684,14 @@
     <div class="funnel-stage-sub">Headline match</div>
   </div>
   <div class="funnel-arrow">
+    <svg viewBox="0 0 28 28" fill="none"><path d="M6 14h16M18 8l4 6-4 6" stroke="#FF6B35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg>
+  </div>
+  <div class="funnel-stage">
+    <div class="funnel-stage-icon">&#128270;</div>
+    <div class="funnel-stage-label" style="color: var(--tga-orange);">Exa Enriched</div>
+    <div class="funnel-stage-sub" style="color: var(--tga-orange); opacity: 0.7;">Web context</div>
+  </div>
+  <div class="funnel-arrow">
     <svg viewBox="0 0 28 28" fill="none"><path d="M6 14h16M18 8l4 6-4 6" stroke="#0CDD78" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg>
   </div>
   <div class="funnel-stage">
@@ -683,6 +729,7 @@
 <div class="tools-row">
   <span class="tools-label">Powered by</span>
   <span class="tool-chip green">Claude Code</span>
+  <span class="tool-chip" style="border-color: rgba(255, 107, 53, 0.2); color: var(--tga-orange); background: rgba(255, 107, 53, 0.1);">Exa MCP</span>
   <span class="tool-chip">gws CLI</span>
   <span class="tool-chip">RevyOps API</span>
   <span class="tool-chip">Google Sheets</span>

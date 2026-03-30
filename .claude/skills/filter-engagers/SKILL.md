@@ -1,12 +1,12 @@
 ---
 name: filter-engagers
-description: "Read raw LinkedIn post engagers from a Google Sheet, run headline filter + AI ICP scoring + RevyOps dedup, and write results to separate sheet tabs. Use when given a Google Sheet URL containing Session 1 raw engagers."
+description: "Read raw LinkedIn post engagers from a Google Sheet, run headline filter + Exa People Search + AI ICP scoring + RevyOps dedup, and write results to separate sheet tabs. Use when given a Google Sheet URL containing Session 1 raw engagers."
 argument-hint: "[google-sheet-url]"
 ---
 
 # Filter Engagers — ICP Qualification Pipeline
 
-Given a Google Sheet URL containing raw LinkedIn post engagers (from Session 1 / `scrape-post-eg`), this skill runs three qualification steps and writes each stage to its own sheet tab — all before spending a single enrichment credit.
+Given a Google Sheet URL containing raw LinkedIn post engagers (from Session 1 / `scrape-post-eg`), this skill runs four qualification steps and writes each stage to its own sheet tab — filtering and scoring leads before committing enrichment credits.
 
 ---
 
@@ -26,11 +26,13 @@ If the user provides only a sheet URL, proceed with `Sheet1` as the input tab.
 ```
 Read input tab (raw engagers)
     ↓
-Step 1: Headline Filter (regex, all rows) → "Headline Filtered" tab
+Step 1: Headline Filter (regex, all rows)           → "Headline Filtered" tab
     ↓
-Step 2: AI ICP Scoring (pilot 10, then full) → "ICP Scored" tab
+Step 2: Exa People Search (on passed rows)          → adds exa_summary column
     ↓
-Step 3: RevyOps Dedup (curl per row) → "Ready for Enrichment" tab
+Step 3: AI ICP Scoring (with Exa context, pilot 10) → "ICP Scored" tab
+    ↓
+Step 4: RevyOps Dedup (curl per row)                → "Ready for Enrichment" tab
 ```
 
 ---
@@ -90,29 +92,37 @@ Create the tab if it doesn't exist. Clear it if it does. Write ALL rows (pass an
 
 | Name | Headline | LinkedIn URL | Engagement | Pass | Reason | Has SaaS Signal |
 
-```bash
-# Create tab
-gws sheets spreadsheets batchUpdate \
-  --params '{"spreadsheetId": "<SHEET_ID>"}' \
-  --json '{"requests": [{"addSheet": {"properties": {"title": "Headline Filtered"}}}]}'
-
-# Clear if already exists (ignore error if tab is new)
-gws sheets spreadsheets values clear \
-  --params '{"spreadsheetId": "<SHEET_ID>", "range": "Headline Filtered"}'
-
-# Write data
-gws sheets spreadsheets values update \
-  --params '{"spreadsheetId": "<SHEET_ID>", "range": "Headline Filtered!A1", "valueInputOption": "RAW"}' \
-  --json "$(cat /tmp/headline-filtered.json)"
-```
-
 Report: "Headline filter complete. X passed, Y failed. Z have SaaS signals."
 
 ---
 
-## Step 3: AI ICP Scoring
+## Step 3: Exa People Search
 
-Take only the rows that **passed** the headline filter.
+For each row that **passed** the headline filter, run an Exa People Search to get web context about the person. This context feeds into the AI scoring step, making scores dramatically more accurate.
+
+### How to call Exa
+
+Use the Exa MCP tool `people_search_exa`. For each passed row, search with the person's name and headline:
+
+```
+Query: "[Name] [Headline]"
+```
+
+From the Exa results, extract a **one-paragraph summary** of who this person is — their company, what it does, stage, and any signals relevant to the ICP (e.g., "founded a B2B SaaS platform", "runs a marketing consultancy", "pre-seed AI startup").
+
+If Exa returns no results or an error for a row, set `exa_summary` to `"No web context found"` and continue.
+
+### Store the results
+
+Add an `exa_summary` field to each passed row's data. This will be passed to the AI scoring step and written to the "ICP Scored" tab for transparency.
+
+Report: "Exa People Search complete. Found web context for X of Y leads."
+
+---
+
+## Step 4: AI ICP Scoring
+
+Take only the rows that **passed** the headline filter (now enriched with Exa context).
 
 ### ICP Scoring Rubric
 
@@ -122,25 +132,34 @@ This is the rubric Claude uses to score each lead. Students can edit this sectio
 
 | Score | Label | Criteria |
 |-------|-------|----------|
-| **9-10** | STRONG_FIT | B2B SaaS founder (CEO/Co-founder). Clear product company, not services. Pre-seed to Series A signals in headline. Founder appears to personally run GTM. |
-| **6-8** | MODERATE_FIT | Founder signal + SaaS/tech signal, but some ambiguity. Could be a real product founder or could be a tech-enabled services company. Needs enrichment to confirm. |
-| **3-5** | WEAK_FIT | Founder signal but no SaaS/product signal. Likely a consultant, coach, or agency owner who uses "founder" in their title. |
-| **1-2** | POOR_FIT | Weak founder signal or strong non-ICP signals. Service providers, content creators, operators at larger companies. |
+| **9-10** | STRONG_FIT | B2B SaaS founder (CEO/Co-founder). Clear product company, not services. Pre-seed to Series A signals. Founder appears to personally run GTM. Exa confirms a real software product. |
+| **6-8** | MODERATE_FIT | Founder signal + SaaS/tech signal, but some ambiguity. Exa context may partially clarify — could be a real product founder or a tech-enabled services company. |
+| **3-5** | WEAK_FIT | Founder signal but no SaaS/product signal. Exa suggests a consultant, coach, or agency owner who uses "founder" in their title. |
+| **1-2** | POOR_FIT | Weak founder signal or strong non-ICP signals. Exa confirms service provider, content creator, or operator at a larger company. |
 | **0** | NO_FIT | Excluded role that bypassed headline filter, or clearly not a founder. |
+
+### Scoring input per row
+
+For each row, Claude receives:
+- `name` — the person's name
+- `headline` — their LinkedIn headline
+- `exa_summary` — the web context from Exa People Search
+
+Claude scores using BOTH the headline AND the Exa summary. The Exa context resolves ambiguity — a headline like "Founder | Helping companies scale" could be a SaaS founder or a consultant, but Exa returning "founded DataPulse, a B2B SaaS platform" makes it a clear 9/10.
 
 ### Scoring output per row
 
 For each row, produce:
 - `score` — integer 0-10
 - `score_label` — STRONG_FIT / MODERATE_FIT / WEAK_FIT / POOR_FIT / NO_FIT
-- `rationale` — one sentence explaining the score, referencing specific headline words
+- `rationale` — one sentence explaining the score, referencing specific headline words AND Exa context
 - `is_saas_founder` — true/false
 
 ### Pilot first (10 rows)
 
 Score the **first 10 passed rows only**. Write them to the **"ICP Scored"** tab with columns:
 
-| Name | Headline | LinkedIn URL | Score | Score Label | Rationale | Is SaaS Founder |
+| Name | Headline | LinkedIn URL | Exa Summary | Score | Score Label | Rationale | Is SaaS Founder |
 
 Then **show the user a summary**:
 
@@ -155,13 +174,13 @@ Ask: **"These are the first 10 scores. Want me to adjust the rubric or continue 
 
 ### Full batch (on approval)
 
-Score all remaining passed rows. Append them to the "ICP Scored" tab (don't overwrite the pilot rows — clear and rewrite the full set).
+Score all remaining passed rows. Clear and rewrite the full "ICP Scored" tab with all rows.
 
 Report: "Scored X leads. Y STRONG_FIT (8+), Z MODERATE_FIT (6-7), W below threshold."
 
 ---
 
-## Step 4: RevyOps Dedup
+## Step 5: RevyOps Dedup
 
 For each row in the "ICP Scored" output, check against the RevyOps CRM:
 
@@ -232,5 +251,6 @@ gws sheets spreadsheets values update \
 - `gws` CLI is at `/opt/homebrew/bin/gws` (`@googleworkspace/cli@0.7.0`)
 - RevyOps base URL is `app.revyops.com/api`, **not** `api.revyops.com` (the latter returns NXDOMAIN)
 - `REVYOPS_MASTER_API_KEY` must be set in `.env`
+- Exa People Search uses the Exa MCP tool — ensure the Exa MCP server is connected
 - See `learnings.md` at the repo root for additional gotchas from previous sessions
-- All three pipeline steps are free — no enrichment credits are spent
+- Headline filter and AI scoring are free. Exa People Search is near-free (~$0.01/query). RevyOps dedup is free (own DB).
