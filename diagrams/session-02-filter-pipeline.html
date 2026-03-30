@@ -175,22 +175,12 @@
     border: 1px solid var(--tga-green-20);
     color: var(--tga-green);
     font-family: var(--tga-font-heading);
-    font-size: 28px;
-    font-weight: 700;
-    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 16px;
     border-radius: 8px;
     text-align: center;
-    line-height: 1;
-  }
-  .input-badge small {
-    display: block;
-    font-family: var(--tga-font-body);
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-top: 4px;
-    color: var(--tga-green);
+    line-height: 1.3;
   }
 
   /* Connector */
@@ -270,6 +260,11 @@
     border: 1px solid #2d2d5e;
     color: #7C9FFF;
   }
+  .badge-green {
+    background: var(--tga-green-10);
+    border: 1px solid var(--tga-green-20);
+    color: var(--tga-green);
+  }
   .badge-free {
     background: var(--tga-green-10);
     border: 1px solid var(--tga-green-20);
@@ -290,6 +285,12 @@
     line-height: 1.6;
     margin-bottom: 10px;
   }
+  .step-writes {
+    font-size: 11px;
+    color: var(--tga-text-label);
+    margin-bottom: 8px;
+    font-style: italic;
+  }
   .step-outputs {
     display: flex;
     flex-wrap: wrap;
@@ -300,12 +301,11 @@
     background: var(--tga-node-bg);
     border: 1px solid var(--tga-border);
     color: var(--tga-text-label);
-    font-family: var(--tga-font-body);
+    font-family: 'Courier New', monospace;
     font-size: 11px;
     font-weight: 500;
     padding: 3px 10px;
     border-radius: 6px;
-    font-family: 'Courier New', monospace;
   }
   .step-card.blue  .output-chip { border-color: rgba(59, 130, 246, 0.25); color: #7C9FFF; }
   .step-card.purple .output-chip { border-color: rgba(139, 92, 246, 0.25); color: #B39DFF; }
@@ -331,49 +331,54 @@
     color: var(--tga-text);
   }
 
-  .funnel-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+  .funnel-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
     margin-bottom: 40px;
-  }
-  .funnel-card {
     background: var(--tga-node-bg);
     border: 1px solid var(--tga-border);
-    border-radius: 8px;
-    padding: 16px;
+    border-radius: 10px;
+    padding: 28px 20px;
+  }
+  .funnel-stage {
     text-align: center;
+    flex: 1;
+    padding: 0 8px;
   }
-  .funnel-card.highlight {
-    border-color: rgba(12, 221, 120, 0.3);
-    background: rgba(12, 221, 120, 0.04);
+  .funnel-stage-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
   }
-  .funnel-number {
-    font-family: var(--tga-font-heading);
-    font-size: 30px;
-    font-weight: 700;
-    line-height: 1;
+  .funnel-stage-label {
+    font-family: var(--tga-font-body);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--tga-text);
+    line-height: 1.4;
     margin-bottom: 4px;
   }
-  .funnel-card.highlight .funnel-number { color: var(--tga-green); }
-  .funnel-card:not(.highlight) .funnel-number { color: var(--tga-text); }
-  .funnel-pct {
+  .funnel-stage-sub {
     font-family: var(--tga-font-body);
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--tga-text-label);
-    margin-bottom: 6px;
-  }
-  .funnel-label {
-    font-family: var(--tga-font-body);
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 10px;
     color: var(--tga-text-label);
     text-transform: uppercase;
     letter-spacing: 1px;
-    line-height: 1.4;
   }
-  .funnel-card.highlight .funnel-label { color: var(--tga-green); }
+  .funnel-stage.highlight .funnel-stage-label { color: var(--tga-green); }
+  .funnel-stage.highlight .funnel-stage-sub { color: var(--tga-green); opacity: 0.7; }
+  .funnel-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 48px;
+  }
+  .funnel-arrow svg {
+    width: 28px;
+    height: 28px;
+  }
 
   /* ── BENEFIT BLOCK ── */
   .benefit-block {
@@ -491,21 +496,21 @@
 
 <!-- HEADER -->
 <div class="header">
-  <div class="session-label">RevOps AI Curriculum · Session 2 of 6</div>
+  <div class="session-label">RevOps AI Curriculum &middot; Session 2 of 6</div>
   <h1 class="title">Filter Before You <span>Spend</span></h1>
   <p class="subtitle">ICP qualification and AI scoring — before a single enrichment dollar is committed.</p>
-  <div class="thesis-pill">$0 in API costs · 97 leads scored · enrichment-ready output</div>
+  <div class="thesis-pill">$0 in API costs &middot; free scoring &middot; enrichment-ready output</div>
 </div>
 
 <div class="divider"></div>
 
 <!-- WHY THIS MATTERS -->
 <div class="why-strip">
-  <div class="why-icon">⚡</div>
+  <div class="why-icon">&#9889;</div>
   <div class="why-content">
     <div class="why-label">The Core Principle</div>
     <div class="why-text">
-      Email enrichment costs money — per contact, per API call. If you enrich 97 raw LinkedIn engagers, you'll pay for 60+ people who are agency owners, ghostwriters, and service providers who will never buy. <strong>Session 2 is the gate</strong> that runs before any paid enrichment: it qualifies, scores, and deduplicates for free — so Session 3 only spends on leads worth it.
+      Email enrichment costs money — per contact, per API call. If you enrich your entire list of raw LinkedIn engagers, you'll pay for people who are agency owners, ghostwriters, and service providers who will never buy. <strong>Session 2 is the gate</strong> that runs before any paid enrichment. Claude Code reads the data, applies the filter, scores each lead, and checks the CRM — all in a single conversation, all for free.
     </div>
   </div>
 </div>
@@ -516,11 +521,11 @@
   <!-- Input -->
   <div class="input-node">
     <div class="input-left">
-      <div class="input-eyebrow">Session 1 Output · Input</div>
-      <div class="input-title">LinkedIn Post Engagers</div>
-      <div class="input-desc">Scraped via Apify · Name, Headline, LinkedIn URL, Engagement type</div>
+      <div class="input-eyebrow">Session 1 Output &middot; Input</div>
+      <div class="input-title">Google Sheet &mdash; &ldquo;Sheet1&rdquo; Tab</div>
+      <div class="input-desc">Raw LinkedIn post engagers from Session 1. Scraped via Apify. Name, Headline, LinkedIn URL, Engagement type.</div>
     </div>
-    <div class="input-badge">97<small>raw leads</small></div>
+    <div class="input-badge">Raw<br/>Engagers</div>
   </div>
 
   <!-- Connector -->
@@ -538,13 +543,14 @@
         <div class="step-title">Headline Filter</div>
       </div>
       <div class="step-badges">
-        <span class="badge badge-tool">run_javascript</span>
-        <span class="badge badge-free">Free · No API</span>
+        <span class="badge badge-green">Claude Code</span>
+        <span class="badge badge-free">Free &middot; No API</span>
       </div>
     </div>
     <div class="step-body">
       <div class="step-desc">
-        <p>Regex-based pass/fail against the LinkedIn headline. Requires at least one founder signal (CEO, Co-founder, Founder). Excludes non-ICP roles regardless of founder title: Founder's Office staff, ghostwriters, SDRs, account managers, LinkedIn ad specialists.</p>
+        <p>Regex-based pass/fail against the LinkedIn headline. Requires at least one founder signal (CEO, Co-founder, Founder). Excludes non-ICP roles: ghostwriters, SDRs, recruiters, account managers, LinkedIn ad specialists.</p>
+        <div class="step-writes">Writes to: &ldquo;Headline Filtered&rdquo; tab</div>
         <div class="step-outputs">
           <span class="output-chip">icp_headline_pass</span>
           <span class="output-chip">headline_filter_reason</span>
@@ -568,17 +574,17 @@
         <div class="step-title">AI ICP Scoring</div>
       </div>
       <div class="step-badges">
-        <span class="badge badge-tool">Claude Haiku</span>
-        <span class="badge badge-free">Free · No Credits</span>
+        <span class="badge badge-green">Claude Code</span>
+        <span class="badge badge-free">Free &middot; In-Context</span>
       </div>
     </div>
     <div class="step-body">
       <div class="step-desc">
-        <p>Claude reads each headline and scores ICP fit 0–10 against the Northbound ICP: B2B SaaS founders at $0–10M ARR, pre-seed to Series A, where the founder IS the GTM team. Catches nuance keywords can't — an "AI-Native GTM Agency" founder scores 2/10 even with strong SaaS signals, because they're a service provider.</p>
+        <p>Claude reads each headline and scores ICP fit 0&ndash;10 against the target ICP. Catches nuance keywords can't — scores a &ldquo;Founder | GTM Agency&rdquo; as 2/10 because they're a service provider, not a product founder. Pilots first 10 rows for human review before scoring the rest.</p>
+        <div class="step-writes">Writes to: &ldquo;ICP Scored&rdquo; tab</div>
         <div class="step-outputs">
           <span class="output-chip">score</span>
           <span class="output-chip">score_label</span>
-          <span class="output-chip">fit_band</span>
           <span class="output-chip">rationale</span>
           <span class="output-chip">is_saas_founder</span>
         </div>
@@ -600,13 +606,14 @@
         <div class="step-title">RevyOps Dedup Check</div>
       </div>
       <div class="step-badges">
-        <span class="badge badge-tool">run_javascript</span>
-        <span class="badge badge-free">Free · BYO API Key</span>
+        <span class="badge badge-tool">curl</span>
+        <span class="badge badge-free">Free &middot; Own DB</span>
       </div>
     </div>
     <div class="step-body">
       <div class="step-desc">
-        <p>Checks every LinkedIn URL against the RevyOps master contacts list before queueing for enrichment. Prevents re-enriching leads already in the CRM — or worse, re-sending cold outreach to someone already mid-sequence. Zero Deepline credits; calls RevyOps REST API directly.</p>
+        <p>Checks every LinkedIn URL against the RevyOps CRM master list via REST API. Prevents re-enriching leads already in the database or re-targeting contacts mid-sequence.</p>
+        <div class="step-writes">Writes to: &ldquo;Ready for Enrichment&rdquo; tab</div>
         <div class="step-outputs">
           <span class="output-chip">is_duplicate</span>
           <span class="output-chip">revyops_status</span>
@@ -621,29 +628,38 @@
 <!-- FUNNEL RESULTS -->
 <div class="section-header">
   <div class="section-label">Pipeline Output</div>
-  <div class="section-title">What 97 Engagers Became</div>
+  <div class="section-title">The Qualification Funnel</div>
 </div>
 
-<div class="funnel-grid">
-  <div class="funnel-card">
-    <div class="funnel-number">97</div>
-    <div class="funnel-pct">100%</div>
-    <div class="funnel-label">Raw engagers in</div>
+<div class="funnel-flow">
+  <div class="funnel-stage">
+    <div class="funnel-stage-icon">&#128101;</div>
+    <div class="funnel-stage-label">Raw Engagers</div>
+    <div class="funnel-stage-sub">Session 1 input</div>
   </div>
-  <div class="funnel-card">
-    <div class="funnel-number" style="color: var(--tga-blue);">78</div>
-    <div class="funnel-pct" style="color: var(--tga-blue);">80%</div>
-    <div class="funnel-label">Passed headline filter</div>
+  <div class="funnel-arrow">
+    <svg viewBox="0 0 28 28" fill="none"><path d="M6 14h16M18 8l4 6-4 6" stroke="#0CDD78" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg>
   </div>
-  <div class="funnel-card highlight">
-    <div class="funnel-number">12</div>
-    <div class="funnel-pct">12%</div>
-    <div class="funnel-label">Strong Fit 8+ / 10</div>
+  <div class="funnel-stage">
+    <div class="funnel-stage-icon">&#9989;</div>
+    <div class="funnel-stage-label">Passed Filter</div>
+    <div class="funnel-stage-sub">Headline match</div>
   </div>
-  <div class="funnel-card">
-    <div class="funnel-number" style="color: var(--tga-text-label);">0</div>
-    <div class="funnel-pct" style="color: var(--tga-text-label);">0%</div>
-    <div class="funnel-label">Already in RevyOps</div>
+  <div class="funnel-arrow">
+    <svg viewBox="0 0 28 28" fill="none"><path d="M6 14h16M18 8l4 6-4 6" stroke="#0CDD78" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg>
+  </div>
+  <div class="funnel-stage">
+    <div class="funnel-stage-icon">&#127919;</div>
+    <div class="funnel-stage-label">Strong Fit</div>
+    <div class="funnel-stage-sub">AI scored 6+</div>
+  </div>
+  <div class="funnel-arrow">
+    <svg viewBox="0 0 28 28" fill="none"><path d="M6 14h16M18 8l4 6-4 6" stroke="#0CDD78" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg>
+  </div>
+  <div class="funnel-stage highlight">
+    <div class="funnel-stage-icon">&#128640;</div>
+    <div class="funnel-stage-label">Ready for Enrichment</div>
+    <div class="funnel-stage-sub">Session 3 input</div>
   </div>
 </div>
 
@@ -653,12 +669,12 @@
   <div class="benefit-row">
     <div class="benefit-col bad">
       <div class="benefit-col-label">Without Session 2</div>
-      <p>Enrich all <strong>97 leads</strong> at ~$0.05–0.15 per contact across LeadMagic + Prospeo + Exa. You spend <strong>$15–45 enriching agency founders, ghostwriters, and SDRs</strong> who will never convert. Those credits are gone — and your campaign is polluted with low-quality contacts.</p>
+      <p>Enrich your entire list at <strong>~$0.05&ndash;0.15 per contact</strong>. You spend enrichment credits on ghostwriters, SDRs, and agency founders who will never convert.</p>
     </div>
     <div class="benefit-vs">VS</div>
     <div class="benefit-col good">
       <div class="benefit-col-label">With Session 2</div>
-      <p>Filter for free, then enrich only the <strong>~30 leads</strong> with 6+ ICP scores. Enrichment spend drops by <strong>60–70%</strong>. Every contact entering Session 3 has a clear ICP rationale attached, so copy personalisation in Session 4 has real signal to work from — not just a name and a job title.</p>
+      <p>Filter for free, then enrich only the leads that score above your threshold. <strong>Enrichment spend drops significantly.</strong> Every contact entering Session 3 has a clear ICP rationale attached.</p>
     </div>
   </div>
 </div>
@@ -666,17 +682,15 @@
 <!-- TOOLS ROW -->
 <div class="tools-row">
   <span class="tools-label">Powered by</span>
-  <span class="tool-chip green">Deepline Enrich</span>
-  <span class="tool-chip">run_javascript</span>
-  <span class="tool-chip">Claude Haiku</span>
+  <span class="tool-chip green">Claude Code</span>
+  <span class="tool-chip">gws CLI</span>
   <span class="tool-chip">RevyOps API</span>
-  <span class="tool-chip">Google Sheets → CSV</span>
-  <span class="tool-chip">Deepline Playground</span>
+  <span class="tool-chip">Google Sheets</span>
 </div>
 
 <!-- FOOTER -->
 <div class="footer">
-  <strong>The GTM Architects</strong> · RevOps AI Curriculum · Session 2 of 6
+  <strong>The GTM Architects</strong> &middot; RevOps AI Curriculum &middot; Session 2 of 6
 </div>
 
 </body>

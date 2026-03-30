@@ -5,6 +5,9 @@ dist/
 .env
 .mcp.json
 
+# Docs
+docs/
+
 # Pipeline run output
 data/runs/
 data/checkpoints/*.json

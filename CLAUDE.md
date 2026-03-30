@@ -1,6 +1,6 @@
 # Northbound GTM — Demo Workspace
 
-**RevOps AI Curriculum** — an internal Claude Code workspace for building and demoing automated outbound GTM systems. Built live across 7 sessions.
+**RevOps AI Curriculum** — an internal Claude Code workspace for building and demoing automated outbound GTM systems. Built live across 6 sessions.
 
 ---
 
@@ -71,6 +71,7 @@ npm run pipeline -- --dry-run       # Stop before push (safe for testing)
 | Skill | When to use |
 |-------|-------------|
 | `scrape-post-eg` | Given a post URL + Google Sheet URL → scrape all reactors/commenters → filter by ICP → write to sheet |
+| `filter-engagers` | Given a Google Sheet URL with raw engagers → headline filter + AI ICP scoring + RevyOps dedup → write results to separate sheet tabs |
 
 ---
 
