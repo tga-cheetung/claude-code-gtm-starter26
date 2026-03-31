@@ -100,23 +100,47 @@ Report: "Headline filter complete. X passed, Y failed. Z have SaaS signals."
 
 For each row that **passed** the headline filter, run an Exa People Search to get web context about the person. This context feeds into the AI scoring step, making scores dramatically more accurate.
 
+### Cache file
+
+Use a cache file at `/tmp/exa-cache-<SHEET_ID>.json` to persist results across sessions. The cache is a JSON object keyed by LinkedIn URL: `{ "<linkedin_url>": "<exa_summary>" }`.
+
+**At the start of this step:**
+```python
+import json, os
+cache_path = f"/tmp/exa-cache-{SHEET_ID}.json"
+cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
+```
+
 ### How to call Exa
 
-Use the Exa MCP tool `people_search_exa`. For each passed row, search with the person's name and headline:
+Use the Exa MCP tool `people_search_exa`. For each passed row:
 
-```
-Query: "[Name] [Headline]"
-```
+1. **Check the cache first** — if the row's LinkedIn URL is already in the cache, use the cached `exa_summary` and skip the Exa call entirely.
+2. **If not cached** — call `people_search_exa` with query: `"[Name] [Headline]"`
 
 From the Exa results, extract a **one-paragraph summary** of who this person is — their company, what it does, stage, and any signals relevant to the ICP (e.g., "founded a B2B SaaS platform", "runs a marketing consultancy", "pre-seed AI startup").
 
 If Exa returns no results or an error for a row, set `exa_summary` to `"No web context found"` and continue.
 
+### Cache write cadence
+
+After every **5 new Exa calls** (not cache hits), write the updated cache to disk:
+
+```python
+import json
+with open(cache_path, "w") as f:
+    json.dump(cache, f)
+```
+
+Also write the cache one final time after all rows are processed.
+
+This ensures that if context resets mid-run, completed searches are not lost — at most 4 searches need to be redone.
+
 ### Store the results
 
 Add an `exa_summary` field to each passed row's data. This will be passed to the AI scoring step and written to the "ICP Scored" tab for transparency.
 
-Report: "Exa People Search complete. Found web context for X of Y leads."
+Report: "Exa People Search complete. Found web context for X of Y leads. (Y cache hits, Z new searches)"
 
 ---
 

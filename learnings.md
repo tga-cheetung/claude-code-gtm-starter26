@@ -162,6 +162,36 @@ The master API key from `.env` (`REVYOPS_MASTER_API_KEY`) works. The `/api/` pre
 
 ---
 
+## RevyOps returns `{"status":"No contacts found"}`, not `[]`, for new leads
+
+The `contacts-master-list` endpoint does **not** return an empty array for unknown contacts. It returns:
+```json
+{"status": "No contacts found"}
+```
+For existing contacts it returns an array. Check `isinstance(parsed, list)` — don't check for empty array.
+
+---
+
+## Exa MCP results land in Claude's context window — cache to disk every 5 calls
+
+Unlike bash CLI tools that write to disk, `mcp__exa__people_search_exa` results exist only in Claude's context. If the context resets mid-run, all completed searches are lost.
+
+**Fix:** Cache results to `/tmp/exa-cache-<SHEET_ID>.json` (keyed by LinkedIn URL → exa_summary string). Write the cache after every 5 new Exa calls. On restart, load from cache and skip already-completed rows — at most 4 searches need to be redone.
+
+```python
+import json, os
+cache_path = f"/tmp/exa-cache-{SHEET_ID}.json"
+cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
+
+# After every 5 new calls:
+with open(cache_path, "w") as f:
+    json.dump(cache, f)
+```
+
+This pattern is now baked into the `filter-engagers` skill.
+
+---
+
 ## `--in-place` and `--output` cannot be used together
 
 Use `--output` for the first pass (creates the file), then `--in-place` for subsequent passes on that output. Never use both flags in the same command.
