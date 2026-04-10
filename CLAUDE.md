@@ -72,6 +72,7 @@ npm run pipeline -- --dry-run       # Stop before push (safe for testing)
 |-------|-------------|
 | `scrape-post-eg` | Given a post URL + Google Sheet URL → scrape all reactors/commenters → filter by ICP → write to sheet |
 | `filter-engagers` | Given a Google Sheet URL with raw engagers → headline filter + AI ICP scoring + RevyOps dedup → write results to separate sheet tabs |
+| `enrich-and-copy` | Given a Google Sheet URL with qualified leads → enrichment waterfall (LeadMagic → AI Ark → Exa) + context scoring + copy generation → write "Enriched & Verified" and "Copy Ready" tabs |
 
 ---
 
