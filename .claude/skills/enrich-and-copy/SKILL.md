@@ -87,35 +87,65 @@ If email found → record `email_source: "aiark"`.
 
 If neither LeadMagic nor AI Ark found an email → record `email: ""`, `email_source: "not_found"`, `email_status: "not_found"`. Continue enrichment (Exa still runs).
 
-### Exa (every lead — firmographics + intent signals)
+### Exa Part A — Session 2 People Search (load from cache, no new API call)
 
-Run on every lead regardless of email result. Cache results to `/tmp/exa-cache-<SHEET_ID>.json` — write the cache file after every 5 new Exa calls. On any restart, load the cache and skip leads already completed.
+Session 2's `filter-engagers` skill already ran `people_search_exa` on every qualified lead and cached the results. Load that cache now — do not re-run the people search.
 
 ```python
 import json, os
-cache_path = f"/tmp/exa-cache-{SHEET_ID}.json"
-cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
-
-# After every 5 new calls:
-with open(cache_path, "w") as f:
-    json.dump(cache, f)
+s2_cache_path = f"/tmp/exa-cache-{SHEET_ID}.json"
+s2_cache = json.load(open(s2_cache_path)) if os.path.exists(s2_cache_path) else {}
 ```
 
-Use `mcp__exa__people_search_exa` with the lead's full name + company name as the query. Request: recent posts, company description, tech stack, hiring signals, any pain signals matching the Firm Context.
+For each lead, look up `s2_cache[linkedin_url]` to get the `exa_summary` from Session 2. This contains a company/person summary: what the company does, stage, and whether they're a real SaaS founder.
 
-Extract and store as plain text: `exa_context` (2–3 sentence company + person summary), `exa_intent_signals` (bullet list of any matched pain signals found).
+If a lead is missing from the Session 2 cache (e.g. cache was cleared), fall back to running `mcp__exa__people_search_exa` for that lead only and store the result.
 
-If LeadMagic already returned `company_name` and `employee_count`, use those values. Fill gaps with Exa results.
+If LeadMagic already returned `company_name` and `employee_count`, use those values. Fill any gaps with the Session 2 Exa summary.
 
-## Step 3: Exa Context Scoring
+### Exa Part B — Web Search for Recent Activity (new, per lead)
 
-For each lead, apply the Exa Scoring Rubric defined above.
+Run `mcp__exa__web_search_exa` on every lead for recent intent signals. This is a different search from the Session 2 people search — it targets what the person has been doing recently, not who they are.
 
-Compare `exa_context` and `exa_intent_signals` against the Firm Context pain signals and copy angles.
+Query format: `"[Name] [Company] site:linkedin.com OR site:twitter.com"` — focused on posts, announcements, and activity from the last 90 days.
+
+Cache results separately to `/tmp/web-search-cache-<SHEET_ID>.json` (keyed by LinkedIn URL). Write every 5 new calls.
+
+```python
+ws_cache_path = f"/tmp/web-search-cache-{SHEET_ID}.json"
+ws_cache = json.load(open(ws_cache_path)) if os.path.exists(ws_cache_path) else {}
+
+# After every 5 new calls:
+with open(ws_cache_path, "w") as f:
+    json.dump(ws_cache, f)
+```
+
+Extract and store as plain text: `web_context` — a bullet list of any recent signals found (hiring posts, product launches, agency frustration, outbound-related activity, fundraise announcements). Set to `"No recent activity found"` if nothing relevant.
+
+### Combined context
+
+Each lead now has two Exa data points:
+- `exa_context` — from Session 2 cache: who they are, what their company does
+- `web_context` — from web search: what they've been doing recently
+
+Both feed into Step 3 context scoring and Step 5 copy generation.
+
+## Step 3: Context Scoring
+
+For each lead, apply the Exa Scoring Rubric defined above using both Exa data points together.
+
+Score the combined picture:
+- `exa_context` (Session 2) — who they are, what their company does, whether they're a real SaaS founder
+- `web_context` (Part B web search) — what they've been doing recently, any active pain signals
+
+**Scoring logic:** A lead scores High if either source contains a matched pain signal. A lead scores Medium if both sources confirm ICP fit but neither surfaces a specific signal. A lead scores Low if both sources are generic or off-ICP.
+
+`web_context` is the tiebreaker — a Medium from `exa_context` alone can be upgraded to High if `web_context` surfaces a direct pain signal.
 
 Output per lead:
 - `context_score`: `high` / `medium` / `low`
-- `matched_signals`: comma-separated list of matched pain signals, or `"none"`
+- `matched_signals`: comma-separated list of matched pain signals from either source, or `"none"`
+- `signal_source`: `exa` / `web` / `both` / `none` — where the signals came from
 
 ## Step 4: Write "Enriched & Verified" Tab
 
@@ -133,7 +163,7 @@ gws sheets spreadsheets values clear \
 ```
 
 Write all leads (including not_found emails) with columns:
-`Name`, `LinkedIn URL`, `Headline`, `Engagement Type`, `Source Post`, `Email`, `Email Source`, `Email Status`, `Company`, `Domain`, `Employee Count`, `Tech Stack`, `Exa Context`, `Matched Signals`, `Context Score`
+`Name`, `LinkedIn URL`, `Headline`, `Engagement Type`, `Source Post`, `Email`, `Email Source`, `Email Status`, `Company`, `Domain`, `Employee Count`, `Tech Stack`, `Exa Context`, `Web Context`, `Matched Signals`, `Signal Source`, `Context Score`
 
 After writing, pause and report:
 - Total leads processed
