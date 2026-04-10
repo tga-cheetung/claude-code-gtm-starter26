@@ -35,10 +35,9 @@ Type `hello` — if Claude responds, you're ready for Session 1.
 |---------|-------|-------------|
 | **1** | Before vs After | `/scrape-post-eg` skill → Google Sheet of post engagers |
 | **2** | Filter Before You Spend | ICP qualifier → scored, filtered leads |
-| **3** | APIs Under the Hood | Enrichment waterfall → verified emails + firmographics |
-| **4** | Copy at Scale | Copy engine → 3-email sequence + LinkedIn DM per lead |
-| **5** | Prototype to Production | Smartlead CLI campaign launch |
-| **6** | The Full Machine | Trigger.dev deploy + Slack `/engage` command |
+| **3** | APIs Under the Hood | Enrichment waterfall → verified emails + copy |
+| **4** | Prototype to Production | Smartlead CLI campaign launch |
+| **5** | The Full Machine | Trigger.dev deploy + Slack `/engage` command |
 
 ---
 
@@ -100,7 +99,7 @@ Additional keys for later sessions are listed in `.env.example`.
 npm run scrape     # Step 1 — scrape post engagers
 npm run filter     # Step 2 — ICP filter
 npm run classify   # Step 3 — AI scoring
-npm run enrich     # Step 4 — enrichment waterfall
+npm run enrich     # Step 4 — enrichment waterfall + copy generation
 npm run verify     # Step 5 — email verification
 npm run copy       # Step 6 — copy generation
 npm run push       # Step 7 — Smartlead push (always --dry-run first)
