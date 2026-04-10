@@ -87,19 +87,18 @@ If email found → record `email_source: "aiark"`.
 
 If neither LeadMagic nor AI Ark found an email → record `email: ""`, `email_source: "not_found"`, `email_status: "not_found"`. Continue enrichment (Exa still runs).
 
-### Exa Part A — Session 2 People Search (load from cache, no new API call)
+### Exa Part A — Session 2 People Search (read from Google Sheet, no new API call)
 
-Session 2's `filter-engagers` skill already ran `people_search_exa` on every qualified lead and cached the results. Load that cache now — do not re-run the people search.
+Session 2's `filter-engagers` skill already ran `people_search_exa` on every qualified lead and wrote the results to the "ICP Scored" tab as the `Exa Summary` column. Read from there — do not re-run the people search.
 
-```python
-import json, os
-s2_cache_path = f"/tmp/exa-cache-{SHEET_ID}.json"
-s2_cache = json.load(open(s2_cache_path)) if os.path.exists(s2_cache_path) else {}
+```bash
+gws sheets spreadsheets values get \
+  --params "{\"spreadsheetId\": \"<SHEET_ID>\", \"range\": \"ICP Scored\"}"
 ```
 
-For each lead, look up `s2_cache[linkedin_url]` to get the `exa_summary` from Session 2. This contains a company/person summary: what the company does, stage, and whether they're a real SaaS founder.
+Parse the header row to find the `Exa Summary` and `LinkedIn URL` columns. Build a lookup map keyed by LinkedIn URL → exa_summary.
 
-If a lead is missing from the Session 2 cache (e.g. cache was cleared), fall back to running `mcp__exa__people_search_exa` for that lead only and store the result.
+If a lead's LinkedIn URL is missing from the "ICP Scored" tab (e.g. the tab doesn't exist or the lead wasn't scored in Session 2), fall back to running `mcp__exa__people_search_exa` for that lead only.
 
 If LeadMagic already returned `company_name` and `employee_count`, use those values. Fill any gaps with the Session 2 Exa summary.
 
