@@ -62,7 +62,7 @@
     font-family: var(--tga-font-body);
     font-size: 14px; font-weight: 400;
     color: var(--tga-text-label);
-    max-width: 580px; margin: 0 auto 10px;
+    max-width: 600px; margin: 0 auto 10px;
     line-height: 1.6;
   }
   .thesis-pill {
@@ -96,10 +96,7 @@
     letter-spacing: 2px; text-transform: uppercase;
     margin-bottom: 5px;
   }
-  .why-text {
-    font-family: var(--tga-font-body);
-    font-size: 13px; color: var(--tga-text-muted); line-height: 1.6;
-  }
+  .why-text { font-family: var(--tga-font-body); font-size: 13px; color: var(--tga-text-muted); line-height: 1.6; }
   .why-text strong { color: var(--tga-text); font-weight: 600; }
 
   /* ── PIPELINE ── */
@@ -117,41 +114,21 @@
     font-family: var(--tga-font-body);
     font-size: 11px; font-weight: 500;
     color: var(--tga-green);
-    letter-spacing: 2px; text-transform: uppercase;
-    margin-bottom: 4px;
+    letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;
   }
-  .input-title {
-    font-family: var(--tga-font-heading);
-    font-size: 16px; font-weight: 600; color: var(--tga-text);
-  }
+  .input-title { font-family: var(--tga-font-heading); font-size: 16px; font-weight: 600; color: var(--tga-text); }
   .input-desc { font-size: 12px; color: var(--tga-text-label); margin-top: 3px; }
   .input-badge {
-    background: var(--tga-green-10);
-    border: 1px solid var(--tga-green-20);
-    color: var(--tga-green);
-    font-family: var(--tga-font-heading);
+    background: var(--tga-green-10); border: 1px solid var(--tga-green-20);
+    color: var(--tga-green); font-family: var(--tga-font-heading);
     font-size: 14px; font-weight: 600;
-    padding: 10px 16px; border-radius: 8px;
-    text-align: center; line-height: 1.3;
+    padding: 10px 16px; border-radius: 8px; text-align: center; line-height: 1.3;
   }
 
   /* Connector */
-  .connector {
-    display: flex; flex-direction: column; align-items: center; padding: 4px 0;
-  }
+  .connector { display: flex; flex-direction: column; align-items: center; padding: 4px 0; }
   .connector-line { width: 2px; height: 28px; background: var(--tga-green); opacity: 0.5; }
   .connector-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tga-green); opacity: 0.7; }
-
-  /* Waterfall label */
-  .waterfall-label {
-    text-align: center;
-    font-family: var(--tga-font-body);
-    font-size: 10px; font-weight: 500;
-    color: var(--tga-text-label);
-    letter-spacing: 2px; text-transform: uppercase;
-    padding: 6px 0 0;
-    margin-bottom: -4px;
-  }
 
   /* Step cards */
   .step-card {
@@ -163,33 +140,20 @@
   .step-card.amber  { border-left: 3px solid var(--tga-amber); }
   .step-card.purple { border-left: 3px solid var(--tga-purple); }
   .step-card.green  { border-left: 3px solid var(--tga-green); }
-  .step-card.orange { border-left: 3px solid var(--tga-orange); }
 
-  .step-header {
-    display: flex; align-items: flex-start;
-    justify-content: space-between; margin-bottom: 14px;
-  }
+  .step-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
   .step-number {
-    font-family: var(--tga-font-body);
-    font-size: 11px; font-weight: 500;
+    font-family: var(--tga-font-body); font-size: 11px; font-weight: 500;
     letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;
   }
   .step-card.blue   .step-number { color: var(--tga-blue); }
   .step-card.amber  .step-number { color: var(--tga-amber); }
   .step-card.purple .step-number { color: var(--tga-purple); }
   .step-card.green  .step-number { color: var(--tga-green); }
-  .step-card.orange .step-number { color: var(--tga-orange); }
 
-  .step-title {
-    font-family: var(--tga-font-heading);
-    font-size: 15px; font-weight: 600; color: var(--tga-text);
-  }
+  .step-title { font-family: var(--tga-font-heading); font-size: 15px; font-weight: 600; color: var(--tga-text); }
   .step-badges { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
-  .badge {
-    font-family: var(--tga-font-body);
-    font-size: 11px; font-weight: 500;
-    padding: 4px 10px; border-radius: 6px; white-space: nowrap;
-  }
+  .badge { font-family: var(--tga-font-body); font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
   .badge-tool  { background: #1a1a2e; border: 1px solid #2d2d5e; color: #7C9FFF; }
   .badge-green { background: var(--tga-green-10); border: 1px solid var(--tga-green-20); color: var(--tga-green); }
   .badge-amber { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: var(--tga-amber); }
@@ -202,160 +166,109 @@
   .step-writes { font-size: 11px; color: var(--tga-text-label); margin-bottom: 8px; font-style: italic; }
   .step-outputs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
   .output-chip {
-    background: var(--tga-node-bg);
-    border: 1px solid var(--tga-border);
-    color: var(--tga-text-label);
-    font-family: 'Courier New', monospace;
-    font-size: 11px; font-weight: 500;
-    padding: 3px 10px; border-radius: 6px;
+    background: var(--tga-node-bg); border: 1px solid var(--tga-border);
+    color: var(--tga-text-label); font-family: 'Courier New', monospace;
+    font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 6px;
   }
   .step-card.blue   .output-chip { border-color: rgba(59, 130, 246, 0.25); color: #7C9FFF; }
   .step-card.amber  .output-chip { border-color: rgba(245, 158, 11, 0.25); color: #FCD374; }
   .step-card.purple .output-chip { border-color: rgba(139, 92, 246, 0.25); color: #B39DFF; }
   .step-card.green  .output-chip { border-color: rgba(12, 221, 120, 0.25); color: #6EFAAF; }
-  .step-card.orange .output-chip { border-color: rgba(255, 107, 53, 0.25); color: #FFB088; }
 
-  /* Fallback label */
+  /* Fallback note */
   .fallback-note {
     display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(59, 130, 246, 0.06);
-    border: 1px solid rgba(59, 130, 246, 0.15);
-    border-radius: 6px; padding: 4px 10px;
-    font-size: 11px; color: #7C9FFF;
-    margin-bottom: 10px;
+    background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 6px; padding: 4px 10px; font-size: 11px; color: #7C9FFF; margin-bottom: 10px;
   }
+
+  /* Dual Exa sources */
+  .exa-sources {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;
+  }
+  .exa-source {
+    background: var(--tga-node-bg); border: 1px solid var(--tga-border);
+    border-radius: 8px; padding: 14px 16px;
+  }
+  .exa-source.s2 { border-left: 3px solid var(--tga-green); }
+  .exa-source.web { border-left: 3px solid var(--tga-purple); }
+  .exa-source-label {
+    font-size: 10px; font-weight: 500; letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .exa-source.s2 .exa-source-label { color: var(--tga-green); }
+  .exa-source.web .exa-source-label { color: var(--tga-purple); }
+  .exa-source-title { font-family: var(--tga-font-heading); font-size: 13px; font-weight: 600; color: var(--tga-text); margin-bottom: 5px; }
+  .exa-source-desc { font-size: 12px; color: var(--tga-text-muted); line-height: 1.5; margin-bottom: 8px; }
+  .exa-source .output-chip { font-size: 10px; }
+  .exa-source.s2 .output-chip  { border-color: rgba(12, 221, 120, 0.25); color: #6EFAAF; }
+  .exa-source.web .output-chip { border-color: rgba(139, 92, 246, 0.25); color: #B39DFF; }
+  .free-tag {
+    display: inline-block; background: var(--tga-green-10); border: 1px solid var(--tga-green-20);
+    color: var(--tga-green); font-size: 10px; font-weight: 500;
+    padding: 2px 8px; border-radius: 4px; margin-bottom: 8px;
+  }
+
+  /* Score pills */
+  .score-legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .score-pill { font-size: 11px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
+  .score-pill.high  { background: var(--tga-green-10); border: 1px solid var(--tga-green-20); color: var(--tga-green); }
+  .score-pill.med   { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: var(--tga-amber); }
+  .score-pill.low   { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); color: var(--tga-purple); }
 
   /* Pilot gate */
   .pilot-gate {
-    background: var(--tga-node-bg);
-    border: 1px solid var(--tga-border);
-    border-left: 3px solid var(--tga-amber);
-    border-radius: 8px; padding: 14px 18px;
-    margin-top: 12px;
-    display: flex; align-items: flex-start; gap: 12px;
+    background: var(--tga-node-bg); border: 1px solid var(--tga-border);
+    border-left: 3px solid var(--tga-amber); border-radius: 8px; padding: 14px 18px;
+    margin-top: 12px; display: flex; align-items: flex-start; gap: 12px;
   }
   .pilot-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
   .pilot-text { font-size: 12px; color: var(--tga-text-muted); line-height: 1.5; }
   .pilot-text strong { color: var(--tga-amber); font-weight: 600; }
 
   /* Output tabs */
-  .output-tabs {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-    margin-bottom: 40px;
-  }
+  .output-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 40px; }
   .output-tab {
-    background: var(--tga-node-bg);
-    border: 2px solid var(--tga-green);
-    box-shadow: 0 0 16px var(--tga-green-glow);
-    border-radius: 10px; padding: 20px 22px;
+    background: var(--tga-node-bg); border: 2px solid var(--tga-green);
+    box-shadow: 0 0 16px var(--tga-green-glow); border-radius: 10px; padding: 20px 22px;
   }
-  .output-tab-eyebrow {
-    font-size: 10px; font-weight: 500;
-    color: var(--tga-green);
-    letter-spacing: 2px; text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-  .output-tab-name {
-    font-family: var(--tga-font-heading);
-    font-size: 14px; font-weight: 600;
-    color: var(--tga-text); margin-bottom: 12px;
-  }
+  .output-tab-eyebrow { font-size: 10px; font-weight: 500; color: var(--tga-green); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+  .output-tab-name { font-family: var(--tga-font-heading); font-size: 14px; font-weight: 600; color: var(--tga-text); margin-bottom: 12px; }
   .output-cols { display: flex; flex-wrap: wrap; gap: 5px; }
   .output-col-chip {
-    background: var(--tga-surface-soft);
-    border: 1px solid var(--tga-border);
-    color: var(--tga-text-label);
-    font-family: 'Courier New', monospace;
+    background: var(--tga-surface-soft); border: 1px solid var(--tga-border);
+    color: var(--tga-text-label); font-family: 'Courier New', monospace;
     font-size: 10px; padding: 2px 8px; border-radius: 4px;
   }
+  .output-col-chip.new { border-color: rgba(12, 221, 120, 0.3); color: var(--tga-green); }
 
-  /* Context score bar */
-  .score-legend {
-    display: flex; gap: 10px; flex-wrap: wrap;
-    margin-top: 10px;
-  }
-  .score-pill {
-    font-size: 11px; font-weight: 500;
-    padding: 4px 12px; border-radius: 20px;
-  }
-  .score-pill.high  { background: var(--tga-green-10); border: 1px solid var(--tga-green-20); color: var(--tga-green); }
-  .score-pill.med   { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: var(--tga-amber); }
-  .score-pill.low   { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); color: var(--tga-purple); }
-
-  /* ── BENEFIT BLOCK ── */
-  .benefit-block {
-    background: var(--tga-node-bg);
-    border: 1px solid var(--tga-border);
-    border-radius: 10px; padding: 24px; margin-bottom: 40px;
-  }
-  .benefit-title {
-    font-family: var(--tga-font-heading);
-    font-size: 14px; font-weight: 600; color: var(--tga-text);
-    margin-bottom: 16px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .benefit-title::before {
-    content: ''; display: inline-block;
-    width: 3px; height: 14px;
-    background: var(--tga-green); border-radius: 2px;
-  }
-  .benefit-row {
-    display: grid; grid-template-columns: 1fr 40px 1fr;
-    gap: 12px; align-items: center;
-  }
-  .benefit-col {
-    background: var(--tga-surface-soft);
-    border: 1px solid var(--tga-border);
-    border-radius: 8px; padding: 16px;
-  }
+  /* Benefit block */
+  .benefit-block { background: var(--tga-node-bg); border: 1px solid var(--tga-border); border-radius: 10px; padding: 24px; margin-bottom: 40px; }
+  .benefit-title { font-family: var(--tga-font-heading); font-size: 14px; font-weight: 600; color: var(--tga-text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .benefit-title::before { content: ''; display: inline-block; width: 3px; height: 14px; background: var(--tga-green); border-radius: 2px; }
+  .benefit-row { display: grid; grid-template-columns: 1fr 40px 1fr; gap: 12px; align-items: center; }
+  .benefit-col { background: var(--tga-surface-soft); border: 1px solid var(--tga-border); border-radius: 8px; padding: 16px; }
   .benefit-col.bad  { border-left: 3px solid #EF4444; }
   .benefit-col.good { border-left: 3px solid var(--tga-green); }
-  .benefit-col-label {
-    font-family: var(--tga-font-body);
-    font-size: 10px; font-weight: 500;
-    letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;
-  }
+  .benefit-col-label { font-family: var(--tga-font-body); font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
   .benefit-col.bad  .benefit-col-label { color: #EF4444; }
   .benefit-col.good .benefit-col-label { color: var(--tga-green); }
   .benefit-col p { font-size: 12px; color: var(--tga-text-muted); line-height: 1.6; }
   .benefit-col p strong { color: var(--tga-text); font-weight: 600; }
   .benefit-vs { text-align: center; font-family: var(--tga-font-heading); font-size: 13px; font-weight: 600; color: var(--tga-text-label); }
 
-  /* ── TOOLS ROW ── */
+  /* Tools row */
   .tools-row {
-    background: var(--tga-node-bg);
-    border: 1px solid var(--tga-border);
+    background: var(--tga-node-bg); border: 1px solid var(--tga-border);
     border-radius: 8px; padding: 16px 20px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    margin-bottom: 40px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 40px;
   }
-  .tools-label {
-    font-family: var(--tga-font-body);
-    font-size: 11px; font-weight: 500;
-    color: var(--tga-text-label);
-    letter-spacing: 2px; text-transform: uppercase;
-    white-space: nowrap; margin-right: 4px;
-  }
-  .tool-chip {
-    background: var(--tga-surface-soft);
-    border: 1px solid var(--tga-border);
-    color: var(--tga-text-muted);
-    font-family: var(--tga-font-body);
-    font-size: 12px; font-weight: 500;
-    padding: 6px 14px; border-radius: 6px;
-  }
-  .tool-chip.green {
-    border-color: rgba(12, 221, 120, 0.2);
-    color: var(--tga-green);
-    background: var(--tga-green-10);
-  }
+  .tools-label { font-family: var(--tga-font-body); font-size: 11px; font-weight: 500; color: var(--tga-text-label); letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; margin-right: 4px; }
+  .tool-chip { background: var(--tga-surface-soft); border: 1px solid var(--tga-border); color: var(--tga-text-muted); font-family: var(--tga-font-body); font-size: 12px; font-weight: 500; padding: 6px 14px; border-radius: 6px; }
+  .tool-chip.green { border-color: rgba(12, 221, 120, 0.2); color: var(--tga-green); background: var(--tga-green-10); }
 
-  /* ── FOOTER ── */
-  .footer {
-    text-align: center;
-    font-family: var(--tga-font-body);
-    font-size: 13px; color: var(--tga-disabled);
-  }
+  /* Footer */
+  .footer { text-align: center; font-family: var(--tga-font-body); font-size: 13px; color: var(--tga-disabled); }
   .footer strong { color: var(--tga-text-label); font-weight: 600; }
 </style>
 </head>
@@ -365,19 +278,19 @@
 <div class="header">
   <div class="session-label">RevOps AI Curriculum &middot; Session 3 of 5</div>
   <h1 class="title">APIs <span>Under the Hood</span></h1>
-  <p class="subtitle">A three-API enrichment waterfall — verified emails, firmographic context, and intent-scored copy. All without Clay.</p>
-  <div class="thesis-pill">LeadMagic &rarr; AI Ark &rarr; Exa &middot; Context Scoring &middot; Copy Generation</div>
+  <p class="subtitle">Email waterfall, two-source Exa research, combined context scoring, and intent-calibrated copy — all without Clay.</p>
+  <div class="thesis-pill">LeadMagic &rarr; AI Ark &rarr; Session 2 Exa + Web Search &rarr; Context Score &rarr; Copy</div>
 </div>
 
 <div class="divider"></div>
 
-<!-- WHY THIS MATTERS -->
+<!-- WHY STRIP -->
 <div class="why-strip">
   <div class="why-icon">&#9889;</div>
   <div class="why-content">
     <div class="why-label">The Core Principle</div>
     <div class="why-text">
-      Clay is an API waterfall with a UI on top. <strong>This session shows you the waterfall itself.</strong> LeadMagic finds the email and verifies it. AI Ark steps in when LeadMagic misses. Exa researches every lead for intent signals. Claude scores the context against your firm's value proposition and writes copy calibrated to what it found. No platform fee. No credit system. You own every step.
+      Clay is an API waterfall with a UI on top. <strong>This session shows you the waterfall itself.</strong> We reuse the Exa context already gathered in Session 2 — free, no repeat API calls — and layer in a targeted web search for recent intent signals. Claude scores the combined picture against your firm's value proposition, then writes copy calibrated to what it found. No platform fee. No credit system. You own every step.
     </div>
   </div>
 </div>
@@ -395,11 +308,7 @@
     <div class="input-badge">Qualified<br/>Leads</div>
   </div>
 
-  <div class="connector">
-    <div class="connector-line"></div>
-    <div class="connector-dot"></div>
-    <div class="connector-line"></div>
-  </div>
+  <div class="connector"><div class="connector-line"></div><div class="connector-dot"></div><div class="connector-line"></div></div>
 
   <!-- Step 1: LeadMagic -->
   <div class="step-card green">
@@ -415,7 +324,7 @@
     </div>
     <div class="step-body">
       <div class="step-desc">
-        <p>Hits the LeadMagic <code>/profile-find</code> endpoint by LinkedIn URL. Returns email, email status, company name, domain, and employee count. Verification is native — no separate call needed. If LeadMagic finds a valid or catch-all email, skip AI Ark entirely.</p>
+        <p>Hits <code>/profile-find</code> by LinkedIn URL. Returns email with native verification — valid, catch_all, or invalid. Also returns company name, domain, and employee count. If a valid or catch-all email is found, AI Ark is skipped entirely.</p>
         <div class="step-outputs">
           <span class="output-chip">email</span>
           <span class="output-chip">email_status</span>
@@ -427,11 +336,7 @@
     </div>
   </div>
 
-  <div class="connector">
-    <div class="connector-line"></div>
-    <div class="connector-dot"></div>
-    <div class="connector-line"></div>
-  </div>
+  <div class="connector"><div class="connector-line"></div><div class="connector-dot"></div><div class="connector-line"></div></div>
 
   <!-- Step 2: AI Ark -->
   <div class="step-card blue">
@@ -448,7 +353,7 @@
     <div class="step-body">
       <div class="step-desc">
         <div class="fallback-note">&#8634; Only runs if LeadMagic returned no email</div>
-        <p>AI Ark's email finder handles catch-all domains and bounce detection natively. Confidence scores map directly to email status: high&rarr;valid, medium&rarr;catch_all, low&rarr;invalid. If neither API finds an email, the lead continues to Exa with <code>email_status: not_found</code> — enrichment still runs.</p>
+        <p>Handles catch-all domains and bounce detection natively. Confidence maps to email status: high&rarr;valid, medium&rarr;catch_all, low&rarr;invalid. If neither API finds an email, enrichment continues with <code>email_status: not_found</code>.</p>
         <div class="step-outputs">
           <span class="output-chip">email</span>
           <span class="output-chip">email_source</span>
@@ -458,49 +363,50 @@
     </div>
   </div>
 
-  <div class="connector">
-    <div class="connector-line"></div>
-    <div class="connector-dot"></div>
-    <div class="connector-line"></div>
-  </div>
+  <div class="connector"><div class="connector-line"></div><div class="connector-dot"></div><div class="connector-line"></div></div>
 
-  <!-- Step 3: Exa -->
+  <!-- Step 3: Dual Exa -->
   <div class="step-card purple">
     <div class="step-header">
       <div class="step-meta">
         <div class="step-number">Step 02 &middot; Research (Every Lead)</div>
-        <div class="step-title">Exa — Firmographics + Intent Signals</div>
+        <div class="step-title">Two-Source Exa Research</div>
       </div>
       <div class="step-badges">
         <span class="badge badge-purple">Exa MCP</span>
-        <span class="badge badge-purple">Cached Every 5 Calls</span>
+        <span class="badge badge-green">Part A Free</span>
       </div>
     </div>
     <div class="step-body">
       <div class="step-desc">
-        <p>Runs on every lead regardless of email result. <code>people_search_exa</code> queries the lead's name + company, surfacing recent posts, hiring signals, tech stack, and any pain signals that match your firm's ICP. Results are cached to <code>/tmp/exa-cache-{SHEET_ID}.json</code> after every 5 calls — if the run is interrupted, it resumes without repeating completed searches.</p>
-        <div class="step-writes">Fills gaps in: company_name, domain, employee_count, tech_stack</div>
-        <div class="step-outputs">
-          <span class="output-chip">exa_context</span>
-          <span class="output-chip">exa_intent_signals</span>
-          <span class="output-chip">tech_stack</span>
+        <div class="exa-sources">
+          <div class="exa-source s2">
+            <div class="exa-source-label">Part A &mdash; Session 2</div>
+            <div class="exa-source-title">ICP Scored Tab</div>
+            <div class="free-tag">Free &mdash; no API call</div>
+            <div class="exa-source-desc">Reads the <code>Exa Summary</code> column written by Session 2's <code>filter-engagers</code> skill. Who they are, what their company does, founder stage. Persisted in Google Sheets — survives reboots.</div>
+            <div class="step-outputs"><span class="output-chip">exa_context</span></div>
+          </div>
+          <div class="exa-source web">
+            <div class="exa-source-label">Part B &mdash; New Search</div>
+            <div class="exa-source-title">web_search_exa</div>
+            <div class="exa-source-desc">Targeted search for recent activity: hiring posts, product launches, agency frustration, outbound-related signals. Last 90 days. Cached to <code>/tmp/web-search-cache-{SHEET_ID}.json</code> every 5 calls.</div>
+            <div class="step-outputs"><span class="output-chip">web_context</span></div>
+          </div>
         </div>
+        <p style="font-size:12px; color: var(--tga-text-label); margin: 0;">Both sources feed into context scoring. Part A fills company/firmographic gaps from LeadMagic where needed.</p>
       </div>
     </div>
   </div>
 
-  <div class="connector">
-    <div class="connector-line"></div>
-    <div class="connector-dot"></div>
-    <div class="connector-line"></div>
-  </div>
+  <div class="connector"><div class="connector-line"></div><div class="connector-dot"></div><div class="connector-line"></div></div>
 
   <!-- Step 4: Context Scoring -->
   <div class="step-card amber">
     <div class="step-header">
       <div class="step-meta">
         <div class="step-number">Step 03 &middot; In-Context Scoring</div>
-        <div class="step-title">Exa Context Scoring — Claude In-Context</div>
+        <div class="step-title">Combined Context Scoring — Claude In-Context</div>
       </div>
       <div class="step-badges">
         <span class="badge badge-green">Claude Code</span>
@@ -509,11 +415,12 @@
     </div>
     <div class="step-body">
       <div class="step-desc">
-        <p>Claude compares each lead's Exa results against the <strong>Firm Context block</strong> in the skill file — your value proposition, ICP definition, and top pain signals. If the block is empty, it falls back to reading <code>CLAUDE.md</code>. No API call needed; this is in-context reasoning.</p>
+        <p>Claude scores both Exa sources together against the <strong>Firm Context block</strong> in the skill file (falls back to <code>CLAUDE.md</code> if blank). <code>web_context</code> is the tiebreaker — a Medium from <code>exa_context</code> upgrades to High if the web search surfaces a direct pain signal.</p>
         <div class="step-writes">Writes to: &ldquo;Enriched &amp; Verified&rdquo; tab &mdash; then pauses for approval</div>
         <div class="step-outputs">
           <span class="output-chip">context_score</span>
           <span class="output-chip">matched_signals</span>
+          <span class="output-chip">signal_source</span>
         </div>
         <div class="score-legend">
           <span class="score-pill high">High — signal match</span>
@@ -524,11 +431,7 @@
     </div>
   </div>
 
-  <div class="connector">
-    <div class="connector-line"></div>
-    <div class="connector-dot"></div>
-    <div class="connector-line"></div>
-  </div>
+  <div class="connector"><div class="connector-line"></div><div class="connector-dot"></div><div class="connector-line"></div></div>
 
   <!-- Step 5: Copy Generation -->
   <div class="step-card green">
@@ -544,7 +447,7 @@
     </div>
     <div class="step-body">
       <div class="step-desc">
-        <p>Valid and catch-all emails only. Claude generates a cold email (Subject, Hook, Body, Value Proposition, CTA, P.S.) and a LinkedIn DM per lead using one of three paths based on context score. High-context leads get signal-specific copy. Medium gets role + company personalization. Low gets clean ICP-focused copy with no forced context.</p>
+        <p>Valid and catch-all emails only. Three copy paths based on context score. High-context leads get copy that references the specific matched signal. Medium gets role + company personalization. Low gets clean ICP-focused copy with no forced context. All paths output the same column structure.</p>
         <div class="pilot-gate">
           <div class="pilot-icon">&#9654;</div>
           <div class="pilot-text"><strong>Pilot gate on first 10:</strong> subject + hook displayed per lead. Approval required before full batch runs.</div>
@@ -566,9 +469,9 @@
 </div><!-- /pipeline -->
 
 <!-- OUTPUT TABS -->
-<div class="section-header" style="margin-bottom:16px;">
-  <div class="section-label">Output</div>
-  <div class="section-title" style="font-family:var(--tga-font-heading);font-size:18px;font-weight:600;color:var(--tga-text);">Two New Sheet Tabs</div>
+<div style="margin-bottom:16px;">
+  <div style="font-family:var(--tga-font-body);font-size:11px;font-weight:500;color:var(--tga-text-label);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Output</div>
+  <div style="font-family:var(--tga-font-heading);font-size:18px;font-weight:600;color:var(--tga-text);">Two New Sheet Tabs</div>
 </div>
 <div class="output-tabs">
   <div class="output-tab">
@@ -587,7 +490,9 @@
       <span class="output-col-chip">Employee Count</span>
       <span class="output-col-chip">Tech Stack</span>
       <span class="output-col-chip">Exa Context</span>
+      <span class="output-col-chip new">Web Context</span>
       <span class="output-col-chip">Matched Signals</span>
+      <span class="output-col-chip new">Signal Source</span>
       <span class="output-col-chip">Context Score</span>
     </div>
   </div>
@@ -620,7 +525,7 @@
     <div class="benefit-vs">vs</div>
     <div class="benefit-col good">
       <div class="benefit-col-label">This Waterfall</div>
-      <p>Same APIs. Same waterfall logic. <strong>Pay only the API rate.</strong> Context scoring and copy generation run in Claude's context window — no extra tool, no extra seat. The skill file is yours to edit, version, and hand to clients as a system they own.</p>
+      <p>Same APIs. Same waterfall logic. Session 2 Exa data <strong>reused for free</strong> from Google Sheets. Web search adds fresh intent signals. Context scoring and copy run in Claude's context window — no extra tool, no extra seat. The skill file is yours to version and hand to clients.</p>
     </div>
   </div>
 </div>
@@ -632,8 +537,8 @@
   <span class="tool-chip">LeadMagic API</span>
   <span class="tool-chip">AI Ark API</span>
   <span class="tool-chip">Exa MCP</span>
-  <span class="tool-chip">gws CLI</span>
   <span class="tool-chip">Google Sheets</span>
+  <span class="tool-chip">gws CLI</span>
 </div>
 
 <!-- FOOTER -->
