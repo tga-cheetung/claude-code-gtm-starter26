@@ -106,3 +106,37 @@ Use `mcp__exa__people_search_exa` with the lead's full name + company name as th
 Extract and store as plain text: `exa_context` (2–3 sentence company + person summary), `exa_intent_signals` (bullet list of any matched pain signals found).
 
 If LeadMagic already returned `company_name` and `employee_count`, use those values. Fill gaps with Exa results.
+
+## Step 3: Exa Context Scoring
+
+For each lead, apply the Exa Scoring Rubric defined above.
+
+Compare `exa_context` and `exa_intent_signals` against the Firm Context pain signals and copy angles.
+
+Output per lead:
+- `context_score`: `high` / `medium` / `low`
+- `matched_signals`: comma-separated list of matched pain signals, or `"none"`
+
+## Step 4: Write "Enriched & Verified" Tab
+
+Create (or clear) the "Enriched & Verified" tab:
+
+```bash
+# Create tab if it doesn't exist
+gws sheets spreadsheets batchUpdate \
+  --params "{\"spreadsheetId\": \"<SHEET_ID>\"}" \
+  --json '{"requests": [{"addSheet": {"properties": {"title": "Enriched & Verified"}}}]}'
+
+# Clear existing data
+gws sheets spreadsheets values clear \
+  --params "{\"spreadsheetId\": \"<SHEET_ID>\", \"range\": \"Enriched & Verified\"}"
+```
+
+Write all leads (including not_found emails) with columns:
+`Name`, `LinkedIn URL`, `Headline`, `Engagement Type`, `Source Post`, `Email`, `Email Source`, `Email Status`, `Company`, `Domain`, `Employee Count`, `Tech Stack`, `Exa Context`, `Matched Signals`, `Context Score`
+
+After writing, pause and report:
+- Total leads processed
+- Emails found (valid + catch_all) vs not found
+- High / Medium / Low context score breakdown
+- "Ready to generate copy for X leads with valid/catch-all emails. Shall I continue?"
