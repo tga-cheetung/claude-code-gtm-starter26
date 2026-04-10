@@ -202,3 +202,33 @@ Write all copy-generated leads with columns:
 `Name`, `Email`, `Context Score`, `Subject`, `Hook`, `Body`, `Value Proposition`, `CTA`, `P.S.`, `LinkedIn DM`
 
 Report: "Done. X leads written to 'Copy Ready' tab. Y high-context, Z medium, W low."
+
+## API Reference
+
+### LeadMagic
+- Endpoint: `POST https://api.leadmagic.io/profile-find`
+- Auth: `X-API-Key: $LEADMAGIC_API_KEY`
+- Key fields returned: `email`, `email_status`, `company_name`, `company_domain`, `employee_count`
+- Email statuses: `valid`, `catch_all`, `invalid`, `unknown`
+
+### AI Ark
+- Endpoint: `POST https://api.aiark.com/v1/find-email`
+- Auth: `Authorization: Bearer $AIARK_API_KEY`
+- Key fields returned: `email`, `confidence` (high/medium/low → maps to valid/catch_all/invalid)
+
+### Exa
+- Tool: `mcp__exa__people_search_exa`
+- Cache: `/tmp/exa-cache-<SHEET_ID>.json` — write every 5 calls, load on restart
+- See `learnings.md` → "Exa MCP results land in Claude's context window" for full caching pattern
+
+### Google Sheets (gws CLI)
+- `gws` is at `/opt/homebrew/bin/gws`
+- Tab creation: `batchUpdate` with `addSheet` request
+- Always clear tab before writing: `values clear`
+- Use escaped double quotes for `--params` (not single quotes) — see `learnings.md`
+- For large datasets: write JSON to `/tmp/` and use `--json "$(cat /tmp/file.json)"`
+
+### Notes
+- `LEADMAGIC_API_KEY`, `AIARK_API_KEY` must be set in `.env`
+- RevyOps dedup already completed in Session 2 — no need to re-check here
+- Read `learnings.md` before debugging any API or gws issues
