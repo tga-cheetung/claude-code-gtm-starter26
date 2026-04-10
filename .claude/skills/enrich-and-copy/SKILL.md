@@ -140,3 +140,65 @@ After writing, pause and report:
 - Emails found (valid + catch_all) vs not found
 - High / Medium / Low context score breakdown
 - "Ready to generate copy for X leads with valid/catch-all emails. Shall I continue?"
+
+## Step 5: Copy Generation — Pilot (first 10)
+
+Take only leads with `email_status` of `valid` or `catch_all` from the enriched data.
+
+Generate copy for the first 10 leads using the appropriate path based on `context_score`:
+
+**High context path:**
+- Subject: Reference a specific matched signal (e.g. "re: hiring your first AE")
+- Hook: 1 sentence directly referencing the matched signal
+- Body: Connect the signal to the firm's value proposition (2–3 sentences)
+- Value Proposition: 1 sentence on the specific outcome the firm delivers
+- CTA: One soft ask (e.g. "Worth a 20-min call?")
+- P.S.: Relevant social proof or case study reference from Firm Context
+- LinkedIn DM: ≤200 chars referencing the matched signal
+
+**Medium context path:**
+- Subject: Reference company name or role
+- Hook: 1 sentence on the ICP pain point from Firm Context
+- Body: ICP pain + firm's approach (2–3 sentences)
+- Value Proposition: 1 sentence on outcome
+- CTA: Standard soft ask
+- P.S.: Generic social proof from Firm Context
+- LinkedIn DM: ≤200 chars referencing role + post engagement
+
+**Low context path:**
+- Subject: Generic ICP-relevant subject (no company/signal references)
+- Hook: 1 sentence on ICP pain point
+- Body: ICP pain + firm's approach (2 sentences)
+- Value Proposition: 1 sentence on outcome
+- CTA: Standard soft ask
+- P.S.: Generic social proof
+- LinkedIn DM: ≤200 chars referencing their engagement with the post
+
+After generating the pilot batch, display for each lead:
+- Name, Context Score, Subject line, Hook line only
+
+Then ask: "Here are the first 10. Does the angle feel right? Want to adjust the tone, the CTA, or the copy depth before I run the rest?"
+
+Wait for explicit approval before proceeding to Step 6.
+
+## Step 6: Copy Generation — Full Batch
+
+On approval, generate copy for all remaining leads with valid/catch_all emails using the same three-path logic.
+
+## Step 7: Write "Copy Ready" Tab
+
+Create (or clear) the "Copy Ready" tab:
+
+```bash
+gws sheets spreadsheets batchUpdate \
+  --params "{\"spreadsheetId\": \"<SHEET_ID>\"}" \
+  --json '{"requests": [{"addSheet": {"properties": {"title": "Copy Ready"}}}]}'
+
+gws sheets spreadsheets values clear \
+  --params "{\"spreadsheetId\": \"<SHEET_ID>\", \"range\": \"Copy Ready\"}"
+```
+
+Write all copy-generated leads with columns:
+`Name`, `Email`, `Context Score`, `Subject`, `Hook`, `Body`, `Value Proposition`, `CTA`, `P.S.`, `LinkedIn DM`
+
+Report: "Done. X leads written to 'Copy Ready' tab. Y high-context, Z medium, W low."
