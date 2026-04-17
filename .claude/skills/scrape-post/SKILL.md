@@ -101,6 +101,33 @@ When the same person appears in both:
 
 If `actor.name` is blank, fall back to `linkedinUrl` as dedup key. If both missing, skip the record.
 
+### 3d. Resolve remaining ACoAAA URLs to vanity slugs
+
+After dedup, check how many records still have internal-ID URLs (contain `ACoAAA`). If any exist, batch them through `harvestapi/linkedin-profile-scraper`:
+
+```json
+{
+  "urls": ["<ACOAAA_URL_1>", "<ACOAAA_URL_2>", "..."],
+  "profileScraperMode": "Profile details no email ($4 per 1k)"
+}
+```
+
+For each result, replace the ACoAAA URL with the returned `linkedinUrl` (vanity slug). Use `originalQuery.url` to match results back to records.
+
+```python
+# Build lookup: original ACoAAA url → resolved vanity url
+resolved = {item["originalQuery"]["url"]: item["linkedinUrl"] for item in results}
+for record in deduplicated:
+    if "ACoAAA" in record["linkedin_url"]:
+        record["linkedin_url"] = resolved.get(record["linkedin_url"], record["linkedin_url"])
+```
+
+**Why after dedup:** People who both reacted AND commented already have a vanity slug (from the comments actor). Only pure reactors need resolution — do this after dedup to avoid unnecessary API calls.
+
+**Cost:** $0.004/profile. Typical post with 80% reactor rate: 68 ACoAAA leads × $0.004 = ~$0.27.
+
+**Note:** If the actor fails to resolve a URL (network error, profile deleted), keep the ACoAAA URL as-is and flag it — email enrichment will skip it but the lead still appears in the sheet.
+
 ---
 
 ## Step 4: Filter — Founders and CEOs Only
@@ -172,7 +199,7 @@ gws sheets spreadsheets values update \
 
 - `actor.headline` **does not exist** — always use `actor.position`
 - `actor.location` is **not returned** in short mode — no location filtering possible without switching to `"full"` mode (slower, more expensive)
-- Reactions URLs are internal IDs; comments URLs are vanity slugs — deduplicate by **name**, not URL
+- Reactions URLs are internal IDs (`ACoAAA`); comments URLs are vanity slugs — deduplicate by **name**, not URL. After dedup, resolve remaining ACoAAA URLs via `harvestapi/linkedin-profile-scraper` (Step 3d) — without this, ~80% of reactors can't be email-enriched
 - Company accounts: URL contains `/company/` (reactions) or `actor.type === "company"` (comments)
 - Set `scrapeReplies: false` to avoid inflating dataset with author replies
 - Always use escaped double-quote `--params` when `--json` uses `$(cat ...)` — single quotes break intermittently

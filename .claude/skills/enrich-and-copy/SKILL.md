@@ -55,37 +55,97 @@ If the tab does not exist or is empty, stop and tell the user: "No leads found i
 
 ## Step 2: Enrichment Waterfall
 
+### Cache initialization (run before any API calls)
+
+```python
+import json, os
+
+SHEET_ID = "<SHEET_ID>"
+email_cache_path = f"/tmp/email-cache-{SHEET_ID}.json"
+email_cache = json.load(open(email_cache_path)) if os.path.exists(email_cache_path) else {}
+```
+
+**On restart:** Load the cache and skip any lead whose LinkedIn URL is already a key in `email_cache`. Only call LeadMagic/AI Ark for leads not yet in the cache.
+
+If the "Enriched & Verified" tab already exists and has data, you can also read from it directly to rebuild `email_cache` — treating it as the ground truth for any prior completed run.
+
 For each lead, run in sequence. Stop at first email hit.
 
-### LeadMagic (primary)
+### LeadMagic (primary — two steps)
+
+**Step 1:** `profile-find` — returns company data, not email directly. Field is `profile_url` (not `linkedin_url`).
 
 ```bash
 curl -s -X POST "https://api.leadmagic.io/profile-find" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $LEADMAGIC_API_KEY" \
-  -d '{"linkedin_url": "<LINKEDIN_URL>"}'
+  -d '{"profile_url": "<LINKEDIN_URL>"}'
 ```
 
-Extract from response: `email`, `email_status` (valid/catch_all/invalid), `company_name`, `company_domain`, `company_linkedin_url`, `employee_count`.
+Extract: `company_name`, `company_website` (use as domain), `employee_count`. No email returned here.
+
+**Step 2:** `email-finder` — requires name + domain from Step 1.
+
+```bash
+curl -s -X POST "https://api.leadmagic.io/email-finder" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $LEADMAGIC_API_KEY" \
+  -d '{"first_name": "<FIRST>", "last_name": "<LAST>", "domain": "<DOMAIN>"}'
+```
+
+Extract: `email`, `email_status` (valid/catch_all/invalid).
 
 If `email` is present and `email_status` is not `invalid` → record `email_source: "leadmagic"`, skip AI Ark.
+
+If `company_website` is missing from profile-find, try guessing the domain from the company name or Exa context before falling back to AI Ark.
 
 ### AI Ark (email fallback)
 
 Only call if LeadMagic returned no email.
 
 ```bash
-curl -s -X POST "https://api.aiark.com/v1/find-email" \
+curl -s -X POST "https://api.ai-ark.com/api/developer-portal/v1/people/export/single" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $AIARK_API_KEY" \
-  -d '{"linkedin_url": "<LINKEDIN_URL>", "full_name": "<NAME>"}'
+  -H "X-TOKEN: $AIARK_API_KEY" \
+  -d '{"url": "<LINKEDIN_URL>"}'
 ```
 
-Extract: `email`, `confidence` (maps to email_status: high→valid, medium→catch_all, low→invalid).
+Parse response — email is at the ROOT level, there is NO `"data"` wrapper:
+```python
+resp = r.json()
+outputs = resp.get("email", {}).get("output", [])  # NOT resp["data"]["email"]
+if outputs and outputs[0].get("address"):
+    addr   = outputs[0]["address"]
+    status = "catch_all" if outputs[0].get("domainType") == "CATCH_ALL" \
+             else ("valid" if outputs[0].get("status") == "VALID" else "unknown")
+```
+
+- 0 credits consumed if not found.
+
+**Only works with vanity slug URLs** (`/in/firstlast`). Fails silently on internal ACoAAA IDs — check URL format before calling.
+
+**Rate limit warning:** Run AI Ark with at most 1 concurrent worker and a 1s delay between requests. Running 10 concurrent workers causes a persistent 429 block that can last hours with no workaround. If you hit a 429, wait 30–60 minutes before retrying.
 
 If email found → record `email_source: "aiark"`.
 
 If neither LeadMagic nor AI Ark found an email → record `email: ""`, `email_source: "not_found"`, `email_status: "not_found"`. Continue enrichment (Exa still runs).
+
+**After each lead, write to cache immediately:**
+
+```python
+email_cache[linkedin_url] = {
+    "email": email,
+    "email_status": email_status,
+    "email_source": email_source,
+    "company": company_name,
+    "domain": domain,
+    "employee_count": employee_count,
+}
+with open(email_cache_path, "w") as f:
+    json.dump(email_cache, f)
+```
+
+Write after every single lead (not every 5) — API credits are non-recoverable.
 
 ### Exa Part A — Session 2 People Search (read from Google Sheet, no new API call)
 
@@ -108,13 +168,13 @@ Run `mcp__exa__web_search_exa` on every lead for recent intent signals. This is 
 
 Query format: `"[Name] [Company] site:linkedin.com OR site:twitter.com"` — focused on posts, announcements, and activity from the last 90 days.
 
-Cache results separately to `/tmp/web-search-cache-<SHEET_ID>.json` (keyed by LinkedIn URL). Write every 5 new calls.
+Cache results separately to `/tmp/web-search-cache-<SHEET_ID>.json` (keyed by LinkedIn URL). Write after every new call.
 
 ```python
 ws_cache_path = f"/tmp/web-search-cache-{SHEET_ID}.json"
 ws_cache = json.load(open(ws_cache_path)) if os.path.exists(ws_cache_path) else {}
 
-# After every 5 new calls:
+# After every single new call (not every 5):
 with open(ws_cache_path, "w") as f:
     json.dump(ws_cache, f)
 ```
@@ -170,49 +230,97 @@ After writing, pause and report:
 - High / Medium / Low context score breakdown
 - "Ready to generate copy for X leads with valid/catch-all emails. Shall I continue?"
 
+> **Restart checkpoint:** If copy generation is interrupted after this step, skip Steps 2–4 entirely on restart. Read the "Enriched & Verified" tab directly — it is the canonical enrichment record. Load `/tmp/email-cache-<SHEET_ID>.json` if it exists for reference, but the sheet is the source of truth.
+
 ## Step 5: Copy Generation — Pilot (first 10)
+
+**Use the `/cold-email` skill for all copy writing.** Follow its writing principles, voice & tone guidelines, framework catalog, and quality check. Do not use a rigid template — pick the framework that best fits each lead's signal and context.
+
+### Copy cache initialization (run before generating any copy)
+
+```python
+copy_cache_path = f"/tmp/copy-ready-{SHEET_ID}.json"
+copy_cache = json.load(open(copy_cache_path)) if os.path.exists(copy_cache_path) else {}
+# copy_cache is keyed by email address → {subject, body, ps, linkedin_dm}
+```
+
+**On restart:** Load the copy cache and skip any lead whose email is already a key. Only generate copy for leads not in the cache.
 
 Take only leads with `email_status` of `valid` or `catch_all` from the enriched data.
 
-Generate copy for the first 10 leads using the appropriate path based on `context_score`:
+### Personalization level by context score
 
-**High context path:**
-- Subject: Reference a specific matched signal (e.g. "re: hiring your first AE")
-- Hook: 1 sentence directly referencing the matched signal
-- Body: Connect the signal to the firm's value proposition (2–3 sentences)
-- Value Proposition: 1 sentence on the specific outcome the firm delivers
-- CTA: One soft ask (e.g. "Worth a 20-min call?")
-- P.S.: Relevant social proof or case study reference from Firm Context
-- LinkedIn DM: ≤200 chars referencing the matched signal
+Map `context_score` to the cold-email skill's personalization levels:
 
-**Medium context path:**
-- Subject: Reference company name or role
-- Hook: 1 sentence on the ICP pain point from Firm Context
-- Body: ICP pain + firm's approach (2–3 sentences)
-- Value Proposition: 1 sentence on outcome
-- CTA: Standard soft ask
-- P.S.: Generic social proof from Firm Context
-- LinkedIn DM: ≤200 chars referencing role + post engagement
+**High → Level 4 (individual).** Use `matched_signals` and `web_context` as the trigger. Recommended frameworks: PPP (Praise-Picture-Push), Observation→Problem→Ask, or Vanilla Ice Cream. The signal must connect directly to the problem we solve — if removing the personalised opener still makes sense, rewrite it.
 
-**Low context path:**
-- Subject: Generic ICP-relevant subject (no company/signal references)
-- Hook: 1 sentence on ICP pain point
-- Body: ICP pain + firm's approach (2 sentences)
-- Value Proposition: 1 sentence on outcome
-- CTA: Standard soft ask
-- P.S.: Generic social proof
-- LinkedIn DM: ≤200 chars referencing their engagement with the post
+**Medium → Level 3 (role-level).** Use company name + founder role as context. Recommended frameworks: PAS (Problem-Agitate-Solution) or SCQ (Situation-Complication-Question). Acknowledge their stage and the founder-as-GTM-team dynamic without referencing specific signals you don't have.
 
-After generating the pilot batch, display for each lead:
-- Name, Context Score, Subject line, Hook line only
+**Low → Level 2 (segment).** ICP pain point only, no company or signal references. Recommended frameworks: QVC (Question-Value-CTA) or Mouse Trap. Keep it short — if the context is thin, brevity beats fabricated personalisation.
 
-Then ask: "Here are the first 10. Does the angle feel right? Want to adjust the tone, the CTA, or the copy depth before I run the rest?"
+### Output format per lead
+
+For each lead produce:
+- **Subject** — 2–4 words, lowercase, no punctuation tricks. Internal-looking. See cold-email/references/subject-lines.md.
+- **Body** — Full email. Conversational, peer-level. Read it aloud — if it sounds like marketing copy, rewrite it. **The body field must end with the CTA question as its final sentence** (e.g. "Worth a 20-min call?"). The AI-tell filter requires exactly 1 `?` in the body field — if the CTA is stored only in a separate field and not also in body, every lead will be flagged.
+- **P.S.** — One relevant social proof or case study reference. Match specificity to context score.
+- **LinkedIn DM** — ≤200 chars. Reference the signal (High), role/company (Medium), or post engagement (Low).
+
+After generating each lead's copy, write it to the cache immediately — before moving to the next lead:
+
+```python
+copy_cache[email] = {
+    "name": name,
+    "email": email,
+    "context_score": context_score,
+    "subject": subject,
+    "body": body,
+    "ps": ps,
+    "linkedin_dm": linkedin_dm,
+}
+with open(copy_cache_path, "w") as f:
+    json.dump(copy_cache, f, indent=2)
+```
+
+Once all pilot leads are written to the cache, run the AI-tell filter:
+
+```bash
+python3 .claude/skills/enrich-and-copy/ai_tell_filter.py \
+  /tmp/copy-ready-<SHEET_ID>.json
+
+# Read back the cleaned copy (filter overwrites in-place)
+python3 -c "import json; print(json.dumps(json.load(open('/tmp/copy-ready-<SHEET_ID>.json')), indent=2))"
+```
+
+The filter will:
+- **Auto-fix** em dashes → regular dashes, exclamation marks → periods, subject casing/punctuation
+- **Flag** banned phrases, word count violations, extra question marks, rhythmic threes
+
+For any flagged leads, revise the copy to address the flags before presenting to the user.
+
+Then display for each lead:
+- Name, Context Score, Subject line, opening line only
+
+Then ask: "Here are the first 10. Does the angle feel right? Want to adjust tone, framework, CTA, or copy depth before I run the rest?"
 
 Wait for explicit approval before proceeding to Step 6.
 
 ## Step 6: Copy Generation — Full Batch
 
-On approval, generate copy for all remaining leads with valid/catch_all emails using the same three-path logic.
+On approval, generate copy for all remaining leads with valid/catch_all emails using the same cold-email skill logic and three-path personalization system.
+
+**On restart:** Load `copy_cache` from `/tmp/copy-ready-<SHEET_ID>.json`. Any lead already in the cache is done — skip it. Only generate for leads whose email is not a key in the cache.
+
+Write each lead to the cache immediately after generation (same pattern as Step 5 — one write per lead).
+
+After all remaining leads are done, run the filter on the full cache:
+
+```bash
+python3 .claude/skills/enrich-and-copy/ai_tell_filter.py \
+  /tmp/copy-ready-<SHEET_ID>.json
+```
+
+Revise any flagged leads, write revised copy back to the cache, then re-run the filter to confirm 0 flags before proceeding to Step 7.
 
 ## Step 7: Write "Copy Ready" Tab
 
@@ -227,23 +335,31 @@ gws sheets spreadsheets values clear \
   --params "{\"spreadsheetId\": \"<SHEET_ID>\", \"range\": \"Copy Ready\"}"
 ```
 
+Read all copy from `/tmp/copy-ready-<SHEET_ID>.json` — this is the source of truth for Step 7, not in-context data. This makes Step 7 safe to re-run after any compaction.
+
 Write all copy-generated leads with columns:
-`Name`, `Email`, `Context Score`, `Subject`, `Hook`, `Body`, `Value Proposition`, `CTA`, `P.S.`, `LinkedIn DM`
+`Name`, `Email`, `Context Score`, `Subject`, `Body`, `P.S.`, `LinkedIn DM`
 
 Report: "Done. X leads written to 'Copy Ready' tab. Y high-context, Z medium, W low."
 
 ## API Reference
 
 ### LeadMagic
-- Endpoint: `POST https://api.leadmagic.io/profile-find`
+- Step 1 — `POST https://api.leadmagic.io/profile-find` — field: `profile_url` (not `linkedin_url`). Returns company data, NOT email.
+- Step 2 — `POST https://api.leadmagic.io/email-finder` — fields: `first_name`, `last_name`, `domain`. Returns `email`, `email_status`.
 - Auth: `X-API-Key: $LEADMAGIC_API_KEY`
-- Key fields returned: `email`, `email_status`, `company_name`, `company_domain`, `employee_count`
 - Email statuses: `valid`, `catch_all`, `invalid`, `unknown`
+- See `learnings.md` for full two-step pattern and domain-guessing fallback.
 
 ### AI Ark
-- Endpoint: `POST https://api.aiark.com/v1/find-email`
-- Auth: `Authorization: Bearer $AIARK_API_KEY`
-- Key fields returned: `email`, `confidence` (high/medium/low → maps to valid/catch_all/invalid)
+- Base URL: `https://api.ai-ark.com/api/developer-portal`
+- Endpoint: `POST /v1/people/export/single`
+- Auth header: `X-TOKEN: $AIARK_API_KEY` (not `Authorization: Bearer`, not `X-API-Key`)
+- Request body: `{"url": "<linkedin_url>"}` — vanity slugs only, not ACoAAA internal IDs
+- Email path: `r.json()["email"]["output"][0]["address"]` — **NO "data" wrapper at root**; going via `r.json()["data"]["email"]` returns empty every time
+- Status: `r.json()["email"]["output"][0]["status"]`; `domainType: "CATCH_ALL"` → catch_all, `status: "VALID"` → valid
+- 0 credits consumed if not found
+- **Concurrency:** max 1 worker, 1s delay. 10 workers → persistent 429 for hours.
 
 ### Exa
 - Tool: `mcp__exa__people_search_exa`

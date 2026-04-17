@@ -98,6 +98,51 @@ Verified (2026-03-23): `https://www.linkedin.com/posts/kenny-damian-90aba221a_iv
 
 ---
 
+# Learnings: AI Ark Email Enrichment (Session 3)
+
+## Internal LinkedIn URLs (`ACoAAA`) block email enrichment — resolve to vanity slugs first
+
+The reactions actor returns internal member IDs (`/in/ACoAADcVKkgB...`). Both LeadMagic and AI Ark require the vanity slug format (`/in/firstlast`). When passed an internal ID:
+- LeadMagic `profile-find`: returns 404 "Profile not found or not accessible"
+- AI Ark `export/single`: returns `{"message": "person not found"}`
+
+HTTP redirect resolution doesn't work: LinkedIn returns status 999 (bot detection) for unauthenticated GET/HEAD requests.
+
+**Fix (confirmed working):** After dedup in the scrape step, collect all records that still have ACoAAA URLs and batch them through `harvestapi/linkedin-profile-scraper`. This actor accepts ACoAAA internal URLs directly and returns the canonical vanity slug. This is now baked into the `scrape-post` skill as Step 3d.
+
+```json
+{
+  "urls": ["https://www.linkedin.com/in/ACoAADcVKkgBJT21PusyzbnmmBEL37IQByiamAE"],
+  "profileScraperMode": "Profile details no email ($4 per 1k)"
+}
+```
+
+Response fields to extract: `originalQuery.url` (key for lookup), `publicIdentifier`, `linkedinUrl` (the vanity slug to replace the ACoAAA URL with).
+
+**Tested 2026-04-10:** 3/3 ACoAAA URLs resolved correctly. Example: `ACoAADcVKkgB...` → `https://www.linkedin.com/in/diogotravanca`. Cost: $0.004/profile — 68 leads costs ~$0.27.
+
+**Alternatively:** Complement the reactions scrape with a comments scrape — the comments actor returns vanity slugs directly (see learnings line 28), but only captures people who both reacted AND commented.
+
+**Impact:** In a typical post-engagement scrape, ~80% of reactors will have internal URLs → only ~20% are directly enrichable without this resolution step.
+
+---
+
+## AI Ark — correct base URL, auth header, and endpoint
+
+The skill docs referenced `api.aiark.com` (no hyphen) — that DNS doesn't exist. The correct setup:
+
+- **Base URL:** `https://api.ai-ark.com/api/developer-portal`
+- **Email endpoint:** `POST /v1/people/export/single`
+- **Auth header:** `X-TOKEN: <api_key>` (not `Authorization: Bearer`, not `X-API-Key`)
+- **Request body:** `{"url": "<linkedin_url>"}` — accepts LinkedIn URL directly, no name needed
+- **Synchronous:** yes, returns immediately
+- **Response:** email is at `data['email']['output'][0]['address']`; status at `data['email']['output'][0]['status']`; `domainType: "CATCH_ALL"` → treat as catch_all, `status: "VALID"` otherwise → valid
+- **Credits:** 0 credits consumed if email not found
+
+Also: `app.ai-ark.com` is the web UI (SPA), not the API. `api.ai-ark.com` is the API server.
+
+---
+
 # Learnings: Deepline Enrich (Session 2)
 
 Things that broke when building the ICP filter + scoring + dedup pipeline with `deepline enrich`. Read this before writing any `run_javascript` or `call_local_claude_code` steps.
@@ -233,3 +278,48 @@ EXA_API_KEY=your_key_here
 ```
 
 Deepline auto-detects these on the next command. Env var names must match exactly (see BYOK docs for the full list of 26 providers). Restart the backend after adding keys: `deepline backend stop --just-backend`.
+
+---
+
+## AI Ark: correct response path has NO "data" wrapper
+
+The original enrichment script had:
+```python
+r.json().get("data", {}).get("email", {}).get("output", [])
+```
+
+This returns empty for every response — the "data" wrapper does not exist. The correct path is:
+```python
+r.json().get("email", {}).get("output", [])
+```
+
+And from that output:
+- `output[0]["address"]` — email address
+- `output[0]["domainType"]` — `"CATCH_ALL"` or other
+- `output[0]["status"]` — `"VALID"` or other
+
+**Impact:** In Session 3, all 59 AI Ark calls returned empty strings because of this bug. Only discovered after manually testing the API response structure. Always verify the actual API response before assuming a path.
+
+---
+
+## AI Ark rate limiting: don't run 10+ concurrent workers
+
+Running 10 concurrent workers to AI Ark triggers a persistent 429 block. Even sequential calls with 0.6s delays returned 429 for hours after the block started. Only 2 emails were recovered before the block hit.
+
+**Fix:** If you need to retry AI Ark after a 429, wait at least 30-60 minutes before trying again. Use 1 worker, 1s delay between requests. Never use ThreadPoolExecutor with >3 workers for AI Ark.
+
+---
+
+## ai_tell_filter.py must cover all copyable fields
+
+The filter was initially only checking `body`, `ps`, and `linkedin_dm`. This allowed em-dashes and banned phrases to pass through the `hook` and `value_prop` fields undetected.
+
+**Fix:** Added explicit processing blocks for `hook` and `value_prop` in `filter_lead()`. Any field that can contain copyable text must be passed through `apply_hard_replacements()` and `check_banned_phrases()`.
+
+---
+
+## CTA as a separate JSON field causes 0-question-mark body failure
+
+The filter requires exactly 1 `?` in the `body` field. If the CTA is stored as a separate `cta` field and not embedded in `body`, the body will have 0 question marks and every lead will be flagged.
+
+**Fix:** Embed the CTA question at the end of the `body` string during generation (e.g., append "Worth a 20-min call?" as the last sentence of `body`). The `cta` field can still exist as a standalone field for display purposes.
