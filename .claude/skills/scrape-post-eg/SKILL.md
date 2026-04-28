@@ -155,7 +155,7 @@ Extract the author's name from the comments data — look for any record where `
 
 If found, also drop any record from **reactions** whose `actor.name.trim().toLowerCase()` matches the author name.
 
-If no author is detected in comments (e.g., author didn't comment), extract the author slug from the post URL itself (e.g., `kenny-damian-90aba221a` → approximate name "kenny damian") and use that for name matching.
+If no author is detected in comments (e.g., author didn't comment), extract the author slug from the post URL itself (e.g., `john-doe-12345abc` → approximate name "john doe") and use that for name matching.
 
 Report: "Removed post author: [name]."
 

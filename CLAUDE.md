@@ -1,118 +1,92 @@
-# Northbound GTM — Demo Workspace
+# Claude Code for GTM — Workspace Context
 
-**RevOps AI Curriculum** — an internal Claude Code workspace for building and demoing automated outbound GTM systems. Built live across 6 sessions.
+A working LinkedIn → Instantly pipeline. Scrapes engagers from a target post, qualifies by ICP, enriches contacts (LeadMagic → AI Ark → Exa), generates personalized copy, pushes to an Instantly campaign, posts a Slack summary. Triggered live by `/engage <linkedin-post-url>` from Slack via an n8n webhook proxy.
 
----
-
-## Business Context
-
-Northbound GTM is an outbound agency for B2B SaaS companies ($0–$10M ARR, pre-seed through Series A). We build signal-based outbound systems and hand them off — no retainers, no lock-in. Revenue model: fixed-fee GTM system builds + optional fractional operator retainers.
-
-Active client count: ~15. Pipeline comes primarily from LinkedIn post engagement scraping and hiring signal monitoring. Primary demo account: **Horizn** (construction project management SaaS targeting general contractors with 20–150 employees).
-
-**Core ICP (Northbound):** SaaS founders — CEOs and co-founders of B2B SaaS companies at $0–$10M ARR. Global. Key pain: founder is the GTM team, revenue capped by their bandwidth. Best signals: posting about hiring first sales rep, pipeline frustration, fired an agency, or raised a seed/Series A without a GTM hire. Exclude agency founders and non-founder roles.
-
-**Horizn ICP (demo client):** Operations directors and estimators at mid-sized general contractors. Key pain: job cost overruns from disconnected field-to-office workflows. Current state: Procore at $30K+/yr or spreadsheets. Best signals: posting estimator/project manager jobs, sharing LinkedIn posts about takeoff software frustration, company headcount 15–75.
-
-**Case studies:**
-- *Hiring signal campaign:* Scraped GC firms posting estimator roles → personalized around growth pain → 5.2% reply rate, 18 demos in 5 weeks
-- *LinkedIn engagement scrape:* Monitored post engagers on "construction software" frustration posts → 60 leads identified → 9 booked in 4 days via same-day outreach
-- *Tech displacement:* BuiltWith-identified Procore users under 50 employees → "Procore without the enterprise tax" angle → 3.9% reply rate across 340 contacts
+This repo is the deliverable of the 5-session **Claude Code for GTM** course. It evolves session-by-session; the final state (after Session 5) ships as production-grade Trigger.dev tasks.
 
 ---
 
-## This Project
-
-A working LinkedIn → Smartlead pipeline in TypeScript. Scrapes engagers from target posts/profiles, classifies by ICP fit, enriches contact data, verifies emails, generates AI copy, pushes to campaigns.
+## Architecture
 
 ```
-scripts/linkedin-pipeline/
-├── 01-scrape.ts          # Pull engagers from LinkedIn via Apify
-├── 02-filter.ts          # ICP filter + RevyOps dedup check
-├── 03-classify.ts        # Claude AI scoring (ICP fit + pain signal)
-├── 04-enrich.ts          # LeadMagic → Prospeo → Perplexity waterfall
-├── 05-verify.ts          # Email deliverability verification (Prospeo)
-├── 06-copy.ts            # AI personalized cold email copy
-├── 07-push-smartlead.ts  # Push verified leads via Smartlead CLI + stage to RevyOps
-└── pipeline.ts           # Full orchestrator (chains all steps)
+src/trigger/
+├── config.ts              # ICP titles, skip lists, FIRM_CONTEXT — edit for your business
+├── types.ts               # RawPerson → ... → Lead pipeline shapes
+├── lib/                   # Typed wrappers around external APIs
+│   ├── apify.ts           # HarvestAPI reactions + comments + ACoAAA resolver
+│   ├── leadmagic.ts       # profile-find + email-finder
+│   ├── ai-ark.ts          # secondary email source (X-TOKEN auth)
+│   ├── exa.ts             # context search + signal extraction
+│   ├── openai.ts          # ICP scoring + copy gen (gpt-4o-mini, JSON mode)
+│   ├── revyops.ts         # dedup check + stage contact (master-list endpoint)
+│   ├── instantly.ts       # bulk add + per-lead PATCH for custom variables
+│   ├── slack.ts           # chat.postMessage + slash command parsing
+│   └── concurrent.ts      # withConcurrency helper for bulk async
+└── tasks/                 # Trigger.dev task definitions
+    ├── 01-scrape-post.ts
+    ├── 02-headline-filter.ts
+    ├── 03-hard-filters.ts
+    ├── 04-dedup-check.ts
+    ├── 05-enrich-leads.ts
+    ├── 06-icp-scoring.ts
+    ├── 07-generate-copy.ts
+    ├── 08-stage-revyops.ts
+    ├── 09-push-instantly.ts
+    └── orchestrator.ts    # Chains all 9 via triggerAndWait, posts Slack summary
+
+n8n/session5-engage.json   # Webhook → parse → fire orchestrator
+scripts/
+├── run-test.ts            # Trigger orchestrator from CLI (no n8n needed)
+├── run-from-cache.ts      # Re-run scoring/copy/push from a prior enriched run
+├── snapshot-run.ts        # Pull a Trigger.dev run + all child runs to disk
+└── push-n8n-workflow.ts   # Deploy n8n/session5-engage.json to your n8n instance
 ```
 
-**Commands:**
+---
+
+## Commands
+
 ```bash
-npm run scrape           # Step 1 — scrape engagers
-npm run filter           # Step 2 — ICP filter + RevyOps dedup
-npm run classify         # Step 3 — Claude AI scoring
-npm run enrich           # Step 4 — enrichment waterfall
-npm run verify           # Step 5 — email verification
-npm run copy             # Step 6 — AI copy generation
-npm run push             # Step 7 — Smartlead CLI push
-npm run pipeline         # Full pipeline
-npm run pipeline -- --from-step=3   # Skip to step 3
-npm run pipeline -- --dry-run       # Stop before push (safe for testing)
+npm run dev            # Start the Trigger.dev dev session — keep open in a real terminal
+npm run deploy         # Deploy tasks to your Trigger.dev project (prod)
+npm run push-workflow  # Deploy the n8n workflow to your n8n cloud instance
+
+npx tsx scripts/run-test.ts <linkedin-post-url> [--max=N] [--no-dry]
+npx tsx scripts/snapshot-run.ts <orchestrator-run-id>
+npx tsx scripts/run-from-cache.ts <orchestrator-run-id>
 ```
 
 ---
 
-## MCPs Available
+## Skills available (`.claude/skills/`)
 
-| MCP | Primary use |
-|-----|-------------|
-| `apify` | LinkedIn scrapers — `harvestapi/linkedin-post-reactions`, `harvestapi/linkedin-post-comments`, `harvestapi/linkedin-profile-posts` |
-| `n8n` | Workflow automation triggers |
-| `perplexity` | Web-grounded research |
-| `notion` | Documentation and knowledge base |
+The skills are the human-in-the-loop versions of the same logic, used in Sessions 1–4 before the pipeline ships. After Session 5, the skills become reference material; the Trigger.dev tasks in `src/trigger/` are what runs in production.
 
-**Note:** Smartlead connects via CLI (`npm install -g @smartlead/cli`), not MCP. RevyOps is the canonical lead database — use the REST API directly (`docs/revyops-api.md`).
-
----
-
-## Skills Available (`.claude/skills/`)
-
-| Skill | When to use |
-|-------|-------------|
-| `scrape-post-eg` | Given a post URL + Google Sheet URL → scrape all reactors/commenters → filter by ICP → write to sheet |
-| `filter-engagers` | Given a Google Sheet URL with raw engagers → headline filter + AI ICP scoring + RevyOps dedup → write results to separate sheet tabs |
-| `enrich-and-copy` | Given a Google Sheet URL with qualified leads → enrichment waterfall (LeadMagic → AI Ark → Exa) + context scoring + copy generation → write "Enriched & Verified" and "Copy Ready" tabs |
+| Skill | Use |
+|---|---|
+| `scrape-post` | Scrape engagers + filter to ICP, write to a Google Sheet |
+| `filter-engagers` | Read sheet, headline filter + ICP scoring + dedup |
+| `enrich-and-copy` | Read qualified leads, run enrichment waterfall + copy gen |
+| `cc-campaign-setup` | Create Instantly campaign and bulk import leads |
 
 ---
 
-## Google Sheets
+## Gotchas
 
-Default target: `https://docs.google.com/spreadsheets/d/1Trv66zVqPXDV7vo-srLmu_nYLwK5z9OKoc2Peu4eT8Y/edit`
-Sheet ID: `1Trv66zVqPXDV7vo-srLmu_nYLwK5z9OKoc2Peu4eT8Y`
-
-Write pattern (always clear first to avoid stale data):
-```bash
-gws sheets spreadsheets values clear --params '{"spreadsheetId": "SHEET_ID", "range": "Sheet1"}'
-gws sheets spreadsheets values update --params '{"spreadsheetId": "SHEET_ID", "range": "Sheet1!A1", "valueInputOption": "RAW"}' --json '{"values": [...]}'
-```
-
----
-
-## Learnings
-
-Gotchas and debugging notes from previous sessions live in `learnings.md` at the repo root.
-
-- **When stuck or getting unexpected results:** Read `learnings.md` first. It likely documents the exact issue.
-- **When you discover a significant gotcha** (wrong field names, API quirks, broken assumptions, workarounds): Append it to `learnings.md` so the next session doesn't hit the same wall.
+Hard-won notes from building this live live in `learnings.md` at the repo root. Read it before touching `src/trigger/lib/` — it documents non-obvious response shapes, auth header quirks, rate limits, and dev-mode rebuild behavior. Append new findings as you hit them.
 
 ---
 
 ## Conventions
 
 - **TypeScript strict** — no `any` without a comment explaining why
-- **Pipeline I/O:** Each step reads JSON from `data/runs/YYYY-MM-DD/`, writes JSON to same dir
-- **Demo fallback:** If today's run file is missing, pipeline loads from `data/checkpoints/` (pre-seeded for live demos)
-- **Claude model:** `claude-sonnet-4-6` for classification/copy, haiku for bulk/cheap ops
-- **Never commit `.env`** — API keys via env only
+- **Pipeline I/O:** each task takes a typed input object and returns a typed output object
+- **Concurrency caps inside tasks:** 3 for AI Ark (it 429s above that), 5 for everything else
+- **AI models:** `gpt-4o-mini` for both scoring and copy gen
+- **Never commit `.env`** — keys via env only
 
 ---
 
-## Gotchas
+## Session 5 Notion lesson
 
-- **Pipeline wiring:** Steps are only chained in `pipeline.ts` after Session 6. Earlier sessions run individual step scripts.
-- **Smartlead push is irreversible** — always use `--dry-run` first when testing the campaign push step
-- **Smartlead uses CLI, not MCP** — `npm install -g @smartlead/cli`, then `smartlead campaigns list`
-- **Apify actors are sync by default** — `call-actor` blocks until done; no polling needed
-- **LinkedIn URLs:** Strip `?utm_source=...` tracking params before passing to Apify actors
-- **gws CLI** is at `/opt/homebrew/bin/gws` (`@googleworkspace/cli@0.7.0`)
+The lesson page (architecture diagram + the 8-prompt migration sequence) is the canonical doc for how the student gets from the Sessions 1–4 skill state to this Trigger.dev state. Link lives in the course materials database.

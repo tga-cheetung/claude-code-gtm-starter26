@@ -5,12 +5,18 @@ dist/
 .env
 .mcp.json
 
+# Local Claude Code overrides — user-specific, never commit
+.claude/settings.local.json
+
 # Docs
 docs/
 
 # Pipeline run output
 data/runs/
 data/checkpoints/*.json
+
+# Cached run snapshots — contain real lead data, never commit
+cached-run/
 
 # Local tool caches
 .deepline/
@@ -20,3 +26,5 @@ data/checkpoints/*.json
 
 # macOS
 .DS_Store
+
+.trigger

@@ -59,7 +59,7 @@ Proceed automatically — no approval gate here.
 ## Step 2 — Create Campaign
 
 ```bash
-INSTANTLY_API_KEY=$(grep 'INSTANTLY_API_KEY' /Users/cheetung/Apps/claude-code/workspace/.env | tr -d '\r' | cut -d'=' -f2)
+INSTANTLY_API_KEY=$(grep 'INSTANTLY_API_KEY' .env | tr -d '\r' | cut -d'=' -f2)
 
 curl -s -X POST https://api.instantly.ai/api/v2/campaigns \
   -H "Authorization: Bearer $INSTANTLY_API_KEY" \
@@ -257,7 +257,7 @@ Leads:    {{N}} imported, 0 duplicates, 0 invalid
 | Activate | POST | `/api/v2/campaigns/{id}/activate` |
 
 **Auth:** `Authorization: Bearer $INSTANTLY_API_KEY`
-**Key:** `grep 'INSTANTLY_API_KEY' /Users/cheetung/Apps/claude-code/workspace/.env | tr -d '\r' | cut -d'=' -f2`
+**Key:** `grep 'INSTANTLY_API_KEY' .env | tr -d '\r' | cut -d'=' -f2`
 
 **Learnings:** See `learnings.md` → "Instantly API (Session 4)" section for full gotcha list.
 

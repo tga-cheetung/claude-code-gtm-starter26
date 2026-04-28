@@ -21,7 +21,7 @@ POLL_TIMEOUT_MIN: 10         # give up polling after this many minutes
 Resolve campaign from the argument. If a name is given, list campaigns and match by name:
 
 ```bash
-INSTANTLY_API_KEY=$(grep 'INSTANTLY_API_KEY' /Users/cheetung/Apps/claude-code/workspace/.env | tr -d '\r' | cut -d'=' -f2)
+INSTANTLY_API_KEY=$(grep 'INSTANTLY_API_KEY' .env | tr -d '\r' | cut -d'=' -f2)
 
 curl -s -H "Authorization: Bearer $INSTANTLY_API_KEY" \
   "https://api.instantly.ai/api/v2/campaigns?limit=100" | python3 -c "
@@ -54,7 +54,7 @@ for d, inboxes in sorted(by_domain.items()):
 Show pre-test summary:
 
 ```
-Campaign: Horizn — GC LinkedIn Engagers
+Campaign: <your campaign name>
 Sending domains found: 4
   send1.example.com   (3 inboxes) — sample: a@send1.example.com
   send2.example.com   (2 inboxes) — sample: a@send2.example.com
@@ -313,7 +313,7 @@ for d in sorted(domains):
 | Find Standby campaign | GET | `/api/v2/campaigns?limit=100` (match name = "Standby") |
 
 **Auth:** `Authorization: Bearer $INSTANTLY_API_KEY`
-**Key:** `grep 'INSTANTLY_API_KEY' /Users/cheetung/Apps/claude-code/workspace/.env | tr -d '\r' | cut -d'=' -f2`
+**Key:** `grep 'INSTANTLY_API_KEY' .env | tr -d '\r' | cut -d'=' -f2`
 
 **Critical gotchas:**
 - `recipients_labels` must use `{region, sub_region, type, esp}` — the official docs show `{provider, type}` which is wrong. Always fetch from the ESP options endpoint.

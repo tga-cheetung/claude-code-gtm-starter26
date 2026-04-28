@@ -1,0 +1,92 @@
+{
+  "name": "Session 5 — /engage Slack → Trigger.dev",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-engage",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "slack-webhook",
+      "name": "Slack Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [0, 300],
+      "webhookId": "slack-engage"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "🚀 Pipeline starting…",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-ack",
+      "name": "Respond 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parses an incoming Slack /engage slash command (form-encoded → $json.body).\n// Extracts the LinkedIn post URL from `text` (handles Slack's <url> formatting),\n// plus channel_id / user_id / response_url for downstream notification.\nconst body = $input.first().json.body || {};\nconst rawText = String(body.text || '').trim();\n\n// Slack often wraps URLs in angle brackets: <https://linkedin.com/posts/...> or <https://...|display>\nconst urlMatch = rawText.match(/<(https?:\\/\\/[^|>]+)/);\nconst postUrl = urlMatch ? urlMatch[1] : rawText;\n\nif (!postUrl.startsWith('http')) {\n  throw new Error(`No URL found in slash command text: \"${rawText}\"`);\n}\n\nreturn [{\n  json: {\n    postUrl,\n    channelId: String(body.channel_id || ''),\n    userId: String(body.user_id || ''),\n    responseUrl: String(body.response_url || ''),\n  }\n}];"
+      },
+      "id": "parse-slack",
+      "name": "Parse Slack Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.trigger.dev/api/v1/tasks/orchestrator/trigger",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ payload: { postUrl: $json.postUrl, slackChannel: $json.channelId, slackUserId: $json.userId, slackResponseUrl: $json.responseUrl } }) }}",
+        "options": {}
+      },
+      "id": "trigger-orchestrator",
+      "name": "Trigger.dev: Fire Orchestrator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [660, 300],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "__N8N_TRIGGER_CREDENTIAL_ID__",
+          "name": "Trigger.dev Secret Key"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Slack Webhook": {
+      "main": [[
+        { "node": "Respond 200 OK", "type": "main", "index": 0 }
+      ]]
+    },
+    "Respond 200 OK": {
+      "main": [[
+        { "node": "Parse Slack Body", "type": "main", "index": 0 }
+      ]]
+    },
+    "Parse Slack Body": {
+      "main": [[
+        { "node": "Trigger.dev: Fire Orchestrator", "type": "main", "index": 0 }
+      ]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

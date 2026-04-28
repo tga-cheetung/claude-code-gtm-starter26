@@ -86,7 +86,7 @@ Apply in this exact order.
 
 - Find any comment record where `actor.author === true` — store their name (normalized: `.trim().toLowerCase()`)
 - Drop that person from both reactions and comments
-- If no author found in comments, extract from the post URL slug (e.g. `kenny-damian-90aba221a` → `"kenny damian"`) and name-match
+- If no author found in comments, extract from the post URL slug (e.g. `john-doe-12345abc` → `"john doe"`) and name-match
 
 ### 3c. Deduplicate by name
 

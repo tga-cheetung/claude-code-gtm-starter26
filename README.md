@@ -1,8 +1,6 @@
 # Claude Code for GTM — Course Workspace
 
-The working repo for **[Claude Code for GTM](https://www.notion.so/thegtmarchitects/Claude-Code-for-GTM-Course-Materials-3258d40b622180fdbe7fee06b547169d)** — a 6-session live course by [The GTM Architects](https://www.thegtmarchitects.com).
-
-You'll build a signal-based outbound system from scratch: scrape LinkedIn post engagers → qualify by ICP → enrich contacts → generate personalized copy → launch Smartlead campaigns → deploy to production. No coding background required.
+The working repo for the 5-session **Claude Code for GTM** course. By the end, you'll have a signal-based outbound system that runs from a single Slack command: scrape LinkedIn post engagers → qualify by ICP → enrich contacts → generate personalized copy → push to an Instantly campaign → notify Slack. No coding background required.
 
 ---
 
@@ -10,8 +8,8 @@ You'll build a signal-based outbound system from scratch: scrape LinkedIn post e
 
 **Step 1 — Clone this repo and open it in VS Code:**
 ```bash
-git clone https://github.com/tga-cheetung/northbound-gtm.git
-cd northbound-gtm
+git clone <this-repo-url>
+cd <repo-folder>
 code .
 ```
 
@@ -32,88 +30,43 @@ Type `hello` — if Claude responds, you're ready for Session 1.
 ## What You'll Build
 
 | Session | Theme | Deliverable |
-|---------|-------|-------------|
-| **1** | Before vs After | `/scrape-post-eg` skill → Google Sheet of post engagers |
+|---|---|---|
+| **1** | Before vs After | `/scrape-post` skill → Google Sheet of post engagers |
 | **2** | Filter Before You Spend | ICP qualifier → scored, filtered leads |
 | **3** | APIs Under the Hood | Enrichment waterfall → verified emails + copy |
-| **4** | Prototype to Production | Smartlead CLI campaign launch |
-| **5** | The Full Machine | Trigger.dev deploy + Slack `/engage` command |
+| **4** | Sequencer Operations | Live Instantly campaign launched from a sheet |
+| **5** | The Full Machine | Trigger.dev pipeline + Slack `/engage` command |
+
+The end state after Session 5: type `/engage <linkedin-post-url>` in Slack, walk away, get a notification ~50 seconds later with the leads pushed to Instantly. No laptop required.
 
 ---
 
-## Repo Structure
+## Repo Layout
 
-```
-scripts/linkedin-pipeline/
-├── 01-scrape.ts          # Apify LinkedIn scraper
-├── 02-filter.ts          # ICP filter + RevyOps dedup
-├── 03-classify.ts        # Claude AI scoring
-├── 04-enrich.ts          # LeadMagic → Prospeo → Perplexity
-├── 05-verify.ts          # Email verification
-├── 06-copy.ts            # AI copy engine
-├── 07-push-smartlead.ts  # Smartlead CLI push
-└── pipeline.ts           # Full orchestrator
-
-.claude/skills/
-└── scrape-post-eg.md     # Session 1 skill (built live)
-
-docs/
-└── revyops-api.md        # RevyOps API reference
-```
-
-Each step is built live during its session — files start as empty stubs.
+- **`src/trigger/`** — The production pipeline (9 Trigger.dev tasks + orchestrator)
+- **`.claude/skills/`** — Skill files used in Sessions 1–4 (Claude Code playbooks)
+- **`n8n/`** — Webhook workflow that receives Slack `/engage` and fires the orchestrator
+- **`scripts/`** — CLI utilities for testing the pipeline + deploying the n8n workflow
+- **`learnings.md`** — Hard-won notes on API quirks, response shapes, and dev-mode behavior. **Read this before touching `lib/`.**
 
 ---
 
-## Prerequisites
+## Before-Each-Session Checklist
 
-| Tool | Used for | Install |
-|------|----------|---------|
-| Node.js 18+ | Running TypeScript scripts | [nodejs.org](https://nodejs.org) |
-| Claude Code | The AI coding environment | `npm install -g @anthropic-ai/claude-code` |
-| gws CLI | Writing to Google Sheets | `npm install -g @googleworkspace/cli` |
-| Smartlead CLI | Campaign management (S5+) | `npm install -g @smartlead/cli` |
-
-**API keys needed for Session 1:**
-- `APIFY_API_KEY` — [console.apify.com](https://console.apify.com/account/integrations)
-- `ANTHROPIC_API_KEY` — [console.anthropic.com](https://console.anthropic.com/keys)
-
-Additional keys for later sessions are listed in `.env.example`.
+- `git pull` to grab any updates
+- `bash init.sh --session=N` (where N is the session you're about to start)
+- `npm install` if dependencies changed
+- Open Claude Code in this folder
 
 ---
 
-## Setup Files
+## Stack
 
-| File | Purpose |
-|------|---------|
-| `.env.example` | Template for your API keys — copy to `.env` and fill in |
-| `.mcp.json.example` | Template for MCP server config — copy to `.mcp.json` and add keys |
-
-`.env` and `.mcp.json` are gitignored and never committed.
-
----
-
-## Commands
-
-```bash
-npm run scrape     # Step 1 — scrape post engagers
-npm run filter     # Step 2 — ICP filter
-npm run classify   # Step 3 — AI scoring
-npm run enrich     # Step 4 — enrichment waterfall + copy generation
-npm run verify     # Step 5 — email verification
-npm run copy       # Step 6 — copy generation
-npm run push       # Step 7 — Smartlead push (always --dry-run first)
-npm run pipeline   # Full pipeline
-npm run pipeline -- --dry-run   # Safe test run (stops before push)
-```
-
----
-
-## Course Materials
-
-- [Course overview + all sessions](https://www.notion.so/thegtmarchitects/Claude-Code-for-GTM-Course-Materials-3258d40b622180fdbe7fee06b547169d)
-- [Step 0: Setup Guide](https://www.notion.so/3288d40b622181b29549e3e6102ef84c)
-
----
-
-Built by [The GTM Architects](https://www.thegtmarchitects.com)
+- **Trigger.dev** — durable task runner for the production pipeline
+- **n8n** — webhook proxy between Slack and Trigger.dev (no Vercel needed)
+- **Apify** (HarvestAPI actors) — LinkedIn scraping
+- **LeadMagic + AI Ark + Exa** — enrichment waterfall
+- **OpenAI** (gpt-4o-mini) — ICP scoring and copy generation
+- **RevyOps** — canonical lead database (dedup + stage)
+- **Instantly** — campaign destination
+- **Slack** — `/engage` slash command + bot-token notifications

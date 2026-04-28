@@ -2,7 +2,7 @@
   "mcpServers": {
     "apify": {
       "type": "http",
-      "url": "https://mcp.apify.com/?tools=actors,docs,runs,harvestapi/linkedin-profile-posts",
+      "url": "https://mcp.apify.com/?tools=actors,docs,runs,harvestapi/linkedin-profile-posts,harvestapi/linkedin-post-reactions,harvestapi/linkedin-post-comments,harvestapi/linkedin-profile-scraper",
       "headers": {
         "Authorization": "Bearer YOUR_APIFY_API_KEY"
       }

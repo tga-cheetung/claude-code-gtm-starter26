@@ -92,9 +92,7 @@ Otherwise you get the author's replies to every comment, which inflates the data
 
 ## Test post
 
-Verified (2026-03-23): `https://www.linkedin.com/posts/kenny-damian-90aba221a_ive-spent-600-hours-inside-claude-code-share-7441843439735865344-toe2`
-- 49 reactions, 18 comments → 62 unique people after cleaning
-- Good size for testing (not too small, not slow)
+Pick any LinkedIn post with ~50 reactions + ~20 comments for testing. That size is large enough to exercise dedup and ACoAAA resolution but small enough to run fast and cheap.
 
 ---
 
@@ -323,3 +321,268 @@ The filter was initially only checking `body`, `ps`, and `linkedin_dm`. This all
 The filter requires exactly 1 `?` in the `body` field. If the CTA is stored as a separate `cta` field and not embedded in `body`, the body will have 0 question marks and every lead will be flagged.
 
 **Fix:** Embed the CTA question at the end of the `body` string during generation (e.g., append "Worth a 20-min call?" as the last sentence of `body`). The `cta` field can still exist as a standalone field for display purposes.
+
+---
+
+# Learnings: Instantly API (Session 4)
+
+Validated against a live Instantly account.
+
+---
+
+## `email_list` is a full replacement, not an append
+
+`PATCH /api/v2/campaigns/{id}` with `{"email_list": [...]}` **replaces the entire list**. If you send one inbox, you get one inbox. 99 others gone.
+
+**Fix:** Always GET the campaign first, modify the array in memory, then PATCH with the full new array.
+
+```
+// correct pattern for adding/removing inboxes
+const campaign = await GET /api/v2/campaigns/{id}
+const updated = campaign.email_list.filter(e => !flaggedEmails.includes(e))
+updated.push(...standbyEmails)
+await PATCH /api/v2/campaigns/{id} { email_list: updated }
+```
+
+---
+
+## Assigned inboxes live in `email_list` on the campaign object
+
+No separate endpoint needed. `GET /api/v2/campaigns/{id}` (and `list_campaigns`) return `email_list` — a flat array of all sending account email addresses assigned to that campaign. Domain extraction is trivial: parse the domain from each email string.
+
+---
+
+## Two warmup score fields — use `stat_warmup_score` from `list_accounts` for selection
+
+- `list_accounts` returns `stat_warmup_score` per inbox (integer 0–100). No extra API call needed for domain selection logic.
+- `POST /api/v2/accounts/warmup-analytics` returns `aggregate_data[email].health_score` — same concept but requires a separate POST with an email array. Use this for the deliverability diagnostic where you want daily breakdown too (`email_date_data`).
+
+**For `instantly-campaign-setup`:** use `stat_warmup_score` from `list_accounts` — one call, all data.  
+**For `instantly-deliverability`:** use warmup-analytics for richer per-day trend data alongside placement test results.
+
+---
+
+## Warmup analytics response schema
+
+```json
+{
+  "email_date_data": {
+    "inbox@domain.com": {
+      "2026-04-19": { "sent": 3, "landed_inbox": 3, "received": 7 }
+    }
+  },
+  "aggregate_data": {
+    "inbox@domain.com": {
+      "sent": 10, "received": 27, "landed_inbox": 10,
+      "health_score_label": "100%", "health_score": 100
+    }
+  }
+}
+```
+
+Note: no `spam_count` field in warmup analytics. Inbox placement tests are needed for spam rate per domain.
+
+---
+
+## A/B variants in sequences: use `variants` array on each step
+
+Campaign sequences use:
+```json
+{
+  "steps": [{
+    "type": "email",
+    "delay": 0,
+    "variants": [
+      { "subject": "Subject A", "body": "{{email_body_1}}" },
+      { "subject": "Subject B", "body": "{{email_body_1}}" }
+    ]
+  }]
+}
+```
+Multiple items in `variants` = A/B test on that step. Instantly rotates automatically.
+
+---
+
+## Custom variables are the personalization mechanism
+
+Sequences store `{{variable_name}}` placeholders. Per-lead values are set as custom variables on the lead object at import time. The campaign's `custom_variables` object shows which variables are declared.
+
+From the live campaign: `subject_line`, `email_body_1`, `email_body_2`, `email_body_3`, `subject_line_3` are all custom variables — not hardcoded in the sequence. This means the sequence template is static; all personalization lives on the lead record.
+
+**Implication for `instantly-campaign-setup`:** Import leads with custom variable fields populated from the Copy Ready tab columns. Map sheet columns → lead custom variables, not → sequence variant bodies.
+
+---
+
+## Inbox placement test `emails` field — unconfirmed
+
+No existing placement tests in the account to inspect. The `emails` field in `POST /api/v2/inbox-placement-tests` is documented as "emails to send the inbox placement test to" which is ambiguous (FROM or TO?). Given `recipients_labels` handles the seed address side, `emails` likely = your sending accounts (FROM). Needs live test to confirm before building `instantly-deliverability`.
+
+---
+
+## Instantly MCP session drops — use curl as fallback
+
+The `mcp__instantly__*` tools return "No valid session ID provided" if the MCP connection has dropped (e.g. after a long conversation). Fall back to direct curl calls with `$INSTANTLY_API_KEY` from `.env`. All the same endpoints, no difference in behavior.
+
+---
+
+## Instantly: `emails` field in placement test = FROM addresses (confirmed)
+
+Tested live. `POST /api/v2/inbox-placement-tests` with `emails: ["adams-r@atomicfunnelsai.com"]` — the response `emails` field echoed back our sending inbox, and `recipients` showed Instantly's internal seed addresses (e.g. `ethan@govynor.com`, `avery@gofynor.com`). Conclusive: `emails` = your sending accounts.
+
+---
+
+## Instantly: `recipients_labels` schema — docs are wrong, use ESP options endpoint
+
+The API docs show `{"provider": "gmail.com", "type": "free"}` but the actual API requires `{"region": "North America", "sub_region": "US", "type": "Professional", "esp": "Google"}`.
+
+**Fix:** Always call `GET /api/v2/inbox-placement-tests/email-service-provider-options` first and use the exact values returned. In this account, only 3 options exist: Google Professional US, Google Personal US, Outlook Professional US.
+
+The skill should dynamically fetch and use these options rather than hardcoding provider strings.
+
+---
+
+## Instantly: Placement tests need production-ready inboxes, not warmup inboxes
+
+A placement test sends to all seed addresses (20 in our test: 10 Google + 10 Outlook). If the sending inbox has `daily_limit: 2` (warmup), the test will take hours or days to complete — not the 2–5 minutes the skill assumes.
+
+**Fix for `instantly-deliverability`:** Before triggering a placement test, check `daily_limit` on sampled inboxes. Require `daily_limit >= 20` (or configurable) to proceed. If all domain samples are in warmup, surface a warning: "All sampled inboxes are in warmup — placement test will run slowly. Proceed anyway or check back in Instantly UI."
+
+In a real production account with graduated inboxes (30–40/day), the test completes in 2–5 minutes as expected.
+
+### Custom variables stored in `lead.payload`, not `custom_variables`
+
+When you PATCH `/api/v2/leads/{id}` with `{"custom_variables": {"subject": "...", "hook": "..."}}`, the keys get merged into `lead.payload` in the API response — not a top-level `custom_variables` field. Reading `lead.custom_variables` always returns `[]`. Read from `lead.payload` instead.
+
+Instantly resolves `{{variable}}` sequence placeholders from `payload` at send time, so the sequence-to-lead wiring works correctly regardless.
+
+Also: on first import via `POST /api/v2/leads/add`, `custom_variables` in the lead object are **silently ignored** — only `email`, `first_name`, `last_name`, `company_name` are persisted. Always follow up with a PATCH per lead to set custom variables after bulk import.
+
+### Instantly API blocks Python `urllib` via Cloudflare (error 1010)
+
+`POST /api/v2/leads` from Python's `urllib.request` returns `403` with body `error code: 1010`. This is a Cloudflare WAF block on the default Python User-Agent, not an Instantly auth issue — the same API key works fine via `curl`.
+
+Fix: use `curl`, `requests` (which sets a browser-like UA by default), or set a non-default `User-Agent` header on `urllib` requests. All other Instantly endpoints I've tested (campaigns GET/PATCH, accounts list) accept urllib fine — this seems specific to the leads endpoint.
+
+---
+
+# Learnings: Session 5 — Trigger.dev pipeline (2026-04-27)
+
+Things that broke when porting the LinkedIn pipeline from skills+CLI to Trigger.dev tasks. Read this before touching `src/trigger/`.
+
+---
+
+## TRIGGER_SECRET_KEY in `.env` must match `trigger.config.ts` project ref
+
+Trigger.dev secret keys are project-scoped (`tr_dev_xxx` for dev, `tr_prod_xxx` for prod). If `TRIGGER_SECRET_KEY` is for a different project than the one in `trigger.config.ts`, every triggered run sits forever in `PENDING_VERSION`. The dev worker registers under project A; the SDK fires runs into project B; nothing matches.
+
+**Diagnose:** `curl -H "Authorization: Bearer $TRIGGER_SECRET_KEY" https://api.trigger.dev/api/v1/deployments?env=dev` — if the returned `git.remoteUrl` doesn't match the current repo, the key is for the wrong project.
+
+**Fix:** Open the Trigger.dev dashboard for the correct project → Settings → API keys → copy the dev secret → replace `TRIGGER_SECRET_KEY` in `.env` → restart `npm run dev`.
+
+---
+
+## `trigger.dev dev` requires a real TTY to keep its supervisor websocket alive
+
+When started as a background process from a non-interactive shell (e.g. spawned by another tool), the local worker builds and indexes ("Local worker ready [node] -> 20260427.X") but the supervisor websocket never establishes — debug log shows `[DevSupervisor] Socket connections { connections: [] }` repeating. Result: triggered runs sit at `PENDING_VERSION`.
+
+**Fix:** Run `npm run dev` in your own interactive terminal. Anything else (the trigger script, n8n's HTTP call) can come from any other process — it just needs the dev session live in a TTY somewhere.
+
+**Never run `trigger.dev dev --log-level=debug`** — it prints `process.env` to stdout, which leaks every secret in your `.env` file.
+
+---
+
+## Trigger.dev v4 has no native HTTP-triggered task
+
+The `webhooks` export in `@trigger.dev/sdk/v3` is for *receiving* webhook payloads from Trigger.dev (e.g. alert callbacks), not for accepting incoming HTTP that fires a task. To trigger a task from outside, you call `tasks.trigger("task-id", payload)` from a process holding `TRIGGER_SECRET_KEY`. That process can be anywhere — Vercel, n8n, a local server, whatever — but Trigger.dev itself does not host an HTTP endpoint that triggers tasks.
+
+For the Slack `/engage` flow we use n8n webhook → HTTP Request node POSTing to `https://api.trigger.dev/api/v1/tasks/orchestrator/trigger` with `Authorization: Bearer $TRIGGER_SECRET_KEY` and `Content-Type: application/json` and body `{ "payload": {...} }`.
+
+---
+
+## `trigger.dev dev` does NOT auto-rebuild on `lib/` changes
+
+Edits inside `src/trigger/lib/*.ts` are not picked up by the running dev session — the dev watcher only fires on changes inside `src/trigger/tasks/*.ts`. After editing anything in `lib/` you must Ctrl+C and re-run `npm run dev` for the new code to apply.
+
+This bit us once: the Instantly response-shape fix sat unused for a full pipeline run because `lib/instantly.ts` had been edited but the dev worker was still on the old code. Symptom: the task `COMPLETED` cleanly but with stale behavior.
+
+---
+
+## HarvestAPI scrape input field is `posts`, not `postUrls`
+
+The `harvestapi/linkedin-post-reactions` and `harvestapi/linkedin-post-comments` actors expect:
+
+```json
+{ "posts": ["<url>"], "maxItems": 20, "profileScraperMode": "short" }
+```
+
+**Not** `postUrls`. Wrong field name returns zero items silently — no error, no warning, just empty dataset. The skill `scrape-post/SKILL.md` had this documented all along; we missed it on the first port.
+
+---
+
+## Instantly `/leads/add` response uses `created_leads`, not `leads`
+
+`POST /api/v2/leads/add` returns:
+
+```json
+{
+  "status": "success",
+  "total_sent": 1,
+  "leads_uploaded": 1,
+  "duplicate_email_count": 0,
+  "invalid_email_count": 0,
+  "created_leads": [{ "index": 0, "id": "...", "email": "..." }]
+}
+```
+
+The created leads are in `created_leads`, not `leads`. If you parse `addData.leads` you always get undefined → empty array → no per-lead PATCH → custom variables never get attached. The `/leads/add` request itself succeeds (200) so the bug looks like "Instantly silently dropped my leads" until you log the raw body.
+
+---
+
+## OpenAI `gpt-4o-mini` returns inconsistent tier values even with strict prompt
+
+We asked for `tier: 1 | 2 | 3 | "skip"` in JSON-mode. The model returns a mix of:
+
+- Numbers: `1`, `2`, `3`
+- Numeric strings: `"1"`, `"2"`, `"3"`
+- Prefixed strings: `"tier 1"`, `"Tier 2"`, `"tier 3"`
+
+This breaks downstream `=== 1` style filters silently. Always normalize at the boundary — collapse all variants into the canonical type before returning from the scoring lib. See `normalizeTier` in `src/trigger/lib/openai.ts`.
+
+---
+
+## Slack bot needs `chat:write.public` scope OR explicit channel membership
+
+Default `chat:write` scope alone is not enough — `chat.postMessage` to a channel the bot isn't a member of returns `not_in_channel`. Two fixes:
+
+1. **Invite the bot:** in the channel, `/invite @<bot-name>`. Per-channel.
+2. **Add `chat:write.public` scope and reinstall the app:** lets the bot post to any public channel without membership. One-time setup.
+
+Option 2 is preferable when you have one canonical notify channel and don't want to manage per-channel bot invites. Reinstalling the Slack app does NOT rotate the bot token (verified).
+
+`conversations.history` is a separate scope (`channels:history` / `groups:history`) and still requires bot membership — `chat:write.public` doesn't cover reads.
+
+---
+
+## ICP scoring prompts must distinguish `tier 3` from `skip` clearly
+
+The original prompt said `ICP: CEOs and co-founders of B2B SaaS companies`. The LLM took this literally and labeled every VP / Head / Director as `skip`. Result: 0 leads ever made it to the push step on the first real run.
+
+**Fix:** be explicit that `skip` is a narrow exclusion (recruiters, students, B2C, competing lead-gen agencies) and that ambiguous-but-decision-maker should land in tier 3. After: 11/82 qualified instead of 0/82.
+
+The general lesson: when an LLM scoring step defaults to the most exclusionary label, the prompt isn't "too strict" — it's "too narrow about what `skip` means." Define the *exclusion* precisely, not the *inclusion*.
+
+---
+
+## Trigger.dev run output above ~10KB is stored behind a presigned URL with TTL
+
+`GET /api/v3/runs/{id}` returns either `output: {...}` (small) or `outputPresignedUrl: "https://..."` (large). The presigned URL expires after a few minutes — stale snapshots become useless for replay.
+
+The presigned content is wrapped in SuperJSON form: `{ json: {...real output...}, meta: {...} }`. Don't forget to unwrap.
+
+For long-lived snapshots: refetch the run before reading, OR write a snapshot script that downloads the presigned content and inlines it into your local cache file.
+
+---
+
+## Trigger.dev task IDs are global per project
+
+When you call `tasks.trigger("orchestrator", payload)`, the string `"orchestrator"` must match `task({ id: "orchestrator", ... })` exactly. Renaming the task ID without updating callers (n8n's HTTP Request URL especially: `…/tasks/orchestrator/trigger`) breaks dispatch silently — the run is created but never picked up.

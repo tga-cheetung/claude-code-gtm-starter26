@@ -10,6 +10,13 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": ["scripts/**/*"],
+  "include": [
+    "src/**/*",
+    "scripts/push-n8n-workflow.ts",
+    "scripts/run-test.ts",
+    "scripts/run-from-cache.ts",
+    "scripts/snapshot-run.ts",
+    "trigger.config.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

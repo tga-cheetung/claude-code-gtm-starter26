@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Session 4: Sequencer Operations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --tga-green: #0CDD78;
+      --tga-green-dark: #08A85C;
+      --tga-bg: #0A0A0A;
+      --tga-surface: #333333;
+      --tga-surface-soft: #1E1E1E;
+      --tga-text: #E5E5E5;
+      --tga-text-muted: #B3B3B3;
+      --tga-text-label: #8F8F8F;
+      --tga-orange: #FF6B35;
+      --tga-border: #2A2A2A;
+      --tga-disabled: #6B6B6B;
+      --tga-node-bg: #141414;
+      --tga-green-10: rgba(12, 221, 120, 0.1);
+      --tga-green-20: rgba(12, 221, 120, 0.2);
+      --tga-green-glow: rgba(12, 221, 120, 0.08);
+      --tga-blue: #3B82F6;
+      --tga-amber: #F59E0B;
+      --tga-purple: #8B5CF6;
+      --tga-font-heading: 'Poppins', sans-serif;
+      --tga-font-body: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--tga-bg);
+      color: var(--tga-text);
+      font-family: var(--tga-font-body);
+      min-height: 100vh;
+      padding: 48px 40px;
+    }
+
+    .diagram {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    /* ── Title Block ── */
+    .title-block {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .session-label {
+      font-family: var(--tga-font-body);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--tga-green);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 14px;
+    }
+
+    .title-block h1 {
+      font-family: var(--tga-font-heading);
+      font-size: 40px;
+      font-weight: 700;
+      color: var(--tga-text);
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+      margin-bottom: 14px;
+    }
+
+    .title-block h1 span { color: var(--tga-green); }
+
+    .subtitle {
+      font-family: var(--tga-font-body);
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--tga-text-label);
+      max-width: 640px;
+      margin: 0 auto 16px;
+      line-height: 1.65;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      background: var(--tga-green-10);
+      border: 1px solid var(--tga-green-20);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-family: var(--tga-font-body);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--tga-green);
+    }
+
+    /* ── Connector ── */
+    .connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 18px 0;
+    }
+
+    .connector-line {
+      width: 2px;
+      height: 24px;
+      background: var(--tga-green);
+    }
+
+    .connector-arrow {
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 8px solid var(--tga-green);
+    }
+
+    /* ── Input Node ── */
+    .input-node {
+      background: var(--tga-surface-soft);
+      border: 2px solid var(--tga-green);
+      border-radius: 10px;
+      padding: 18px 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 0 24px var(--tga-green-glow);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .input-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--tga-green-10);
+      border: 1px solid var(--tga-green-20);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .input-source {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--tga-text-label);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+
+    .input-node h3 {
+      font-family: var(--tga-font-heading);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--tga-text);
+      margin-bottom: 4px;
+    }
+
+    .input-node p {
+      font-size: 12px;
+      color: var(--tga-text-muted);
+    }
+
+    /* ── Section divider label ── */
+    .section-label-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 28px 0 16px;
+    }
+
+    .section-label-line {
+      flex: 1;
+      height: 1px;
+      background: var(--tga-border);
+    }
+
+    .section-label-text {
+      font-family: var(--tga-font-heading);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--tga-text-label);
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      white-space: nowrap;
+    }
+
+    /* ── Section container ── */
+    .section-container {
+      background: var(--tga-surface-soft);
+      border: 1px solid var(--tga-border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .section-container.blue-accent { border-left: 3px solid var(--tga-blue); }
+    .section-container.purple-accent { border-left: 3px solid var(--tga-purple); }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-letter {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--tga-font-heading);
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .section-letter.blue {
+      background: rgba(59, 130, 246, 0.12);
+      color: var(--tga-blue);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
+    .section-letter.purple {
+      background: rgba(139, 92, 246, 0.12);
+      color: var(--tga-purple);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+    }
+
+    .section-title {
+      font-family: var(--tga-font-heading);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--tga-text);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .section-meta {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--tga-text-label);
+    }
+
+    /* ── Step cards ── */
+    .steps-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .five-col { grid-template-columns: repeat(5, 1fr); }
+    .two-col  { grid-template-columns: repeat(2, 1fr); }
+
+    .step-card {
+      background: var(--tga-node-bg);
+      border: 1px solid var(--tga-border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      transition: border-color 0.2s, transform 0.2s;
+      cursor: default;
+    }
+
+    .step-card:hover {
+      border-color: var(--tga-green);
+      transform: translateY(-2px);
+    }
+
+    .step-card.blue-left  { border-left: 3px solid var(--tga-blue); }
+    .step-card.purple-left { border-left: 3px solid var(--tga-purple); }
+
+    .step-num {
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .step-num.blue   { color: var(--tga-blue); }
+    .step-num.purple { color: var(--tga-purple); }
+
+    .step-title {
+      font-family: var(--tga-font-heading);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--tga-text);
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .step-desc {
+      font-size: 11px;
+      color: var(--tga-text-muted);
+      line-height: 1.55;
+    }
+
+    .step-output {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--tga-border);
+      font-size: 11px;
+      color: var(--tga-text-label);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .step-output::before {
+      content: '→';
+      color: var(--tga-green);
+      font-weight: 700;
+    }
+
+    /* ── Speed bar ── */
+    .speed-bar {
+      background: var(--tga-node-bg);
+      border: 1px solid var(--tga-border);
+      border-radius: 8px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .speed-item { text-align: center; }
+
+    .speed-value {
+      font-family: var(--tga-font-heading);
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .speed-value.red   { color: var(--tga-orange); }
+    .speed-value.green { color: var(--tga-green); }
+
+    .speed-label {
+      font-size: 10px;
+      color: var(--tga-text-label);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+
+    .vdivider {
+      width: 1px;
+      height: 36px;
+      background: var(--tga-border);
+      flex-shrink: 0;
+    }
+
+    .speed-fact { }
+
+    .speed-fact-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--tga-text);
+      margin-bottom: 3px;
+    }
+
+    .speed-fact-sub {
+      font-size: 11px;
+      color: var(--tga-text-muted);
+    }
+
+    /* ── Skills output ── */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .skill-card {
+      background: var(--tga-surface-soft);
+      border: 2px solid var(--tga-green);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 20px var(--tga-green-glow);
+    }
+
+    .skill-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--tga-green);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .skill-name {
+      font-family: 'Courier New', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--tga-green);
+      margin-bottom: 10px;
+    }
+
+    .skill-desc {
+      font-size: 12px;
+      color: var(--tga-text-muted);
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+
+    .skill-features { display: flex; flex-direction: column; gap: 7px; }
+
+    .skill-feature {
+      font-size: 11px;
+      color: var(--tga-text-label);
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      line-height: 1.4;
+    }
+
+    .skill-feature::before {
+      content: '✓';
+      color: var(--tga-green);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ── Tools bar ── */
+    .tools-bar {
+      background: var(--tga-node-bg);
+      border: 1px dashed var(--tga-border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tools-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--tga-text-label);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      flex-shrink: 0;
+      margin-right: 4px;
+    }
+
+    .tool-chip {
+      background: var(--tga-surface-soft);
+      border: 1px solid var(--tga-border);
+      border-radius: 6px;
+      padding: 5px 13px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--tga-text-muted);
+      transition: border-color 0.2s, color 0.2s;
+      cursor: default;
+    }
+
+    .tool-chip:hover {
+      border-color: var(--tga-green);
+      color: var(--tga-green);
+    }
+
+    /* ── Next session ── */
+    .next-bar {
+      background: var(--tga-node-bg);
+      border: 1px solid var(--tga-border);
+      border-radius: 8px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-top: 14px;
+    }
+
+    .next-label {
+      font-family: var(--tga-font-heading);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--tga-text-label);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      flex-shrink: 0;
+    }
+
+    .next-content-title {
+      font-family: var(--tga-font-heading);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--tga-text);
+      margin-bottom: 4px;
+    }
+
+    .next-content-desc {
+      font-size: 12px;
+      color: var(--tga-text-muted);
+    }
+
+    .next-content-desc code {
+      background: var(--tga-surface-soft);
+      padding: 2px 7px;
+      border-radius: 4px;
+      color: var(--tga-green);
+      font-size: 11px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      margin-top: 36px;
+      font-size: 13px;
+      color: var(--tga-disabled);
+    }
+  </style>
+</head>
+<body>
+  <div class="diagram">
+
+    <!-- Title -->
+    <div class="title-block">
+      <div class="session-label">Session 4 of 6 — Sequencer Operations</div>
+      <h1>Campaign Launch,<br><span>Engineered</span></h1>
+      <p class="subtitle">Take your Copy Ready leads from Session 3 to a live Instantly campaign — domain selection driven by warmup scores, lead import direct from Google Sheets, and deliverability diagnostics with automatic domain rotation. Zero browser clicks.</p>
+      <div class="stat-row">
+        <div class="stat-pill">30–45 min → Under 5 min</div>
+        <div class="stat-pill">2 Skills Packaged</div>
+        <div class="stat-pill">Zero Browser Clicks</div>
+        <div class="stat-pill">Warmup Scores Drive Every Decision</div>
+      </div>
+    </div>
+
+    <!-- Input connector -->
+    <div class="connector">
+      <div class="connector-line"></div>
+      <div class="connector-arrow"></div>
+    </div>
+
+    <!-- Input node -->
+    <div style="display:flex; justify-content:center;">
+      <div class="input-node">
+        <div class="input-icon">📋</div>
+        <div>
+          <div class="input-source">Input — from Session 3</div>
+          <h3>Copy Ready Tab</h3>
+          <p>Google Sheet · 3-email sequences · Verified leads · Personalized copy</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Part A label -->
+    <div class="section-label-row">
+      <div class="section-label-line"></div>
+      <div class="section-label-text">Part A — Campaign Setup</div>
+      <div class="section-label-line"></div>
+    </div>
+
+    <!-- Part A container -->
+    <div class="section-container blue-accent">
+      <div class="section-header">
+        <div class="section-letter blue">A</div>
+        <div>
+          <div class="section-title">Campaign Setup</div>
+        </div>
+        <div class="section-meta">5 prompts · campaign live</div>
+      </div>
+
+      <div class="steps-grid five-col">
+
+        <div class="step-card blue-left">
+          <div class="step-num blue">Prompt 01</div>
+          <div class="step-title">Create Campaign</div>
+          <div class="step-desc">3-email sequence from Copy Ready tab. Weekdays only, 8am–6pm in lead's timezone. Reply detection on — sequence stops on any reply.</div>
+          <div class="step-output">Campaign ID returned</div>
+        </div>
+
+        <div class="step-card blue-left">
+          <div class="step-num blue">Prompt 02</div>
+          <div class="step-title">Domain Selection</div>
+          <div class="step-desc">Score &gt;80 → 40/day. Score 60–80 → 20/day. Score &lt;60 → excluded. Allocation table shown before applying. Warmup scores, not guesswork.</div>
+          <div class="step-output">Domain allocation table</div>
+        </div>
+
+        <div class="step-card blue-left">
+          <div class="step-num blue">Prompt 03</div>
+          <div class="step-title">Warm-Up Config</div>
+          <div class="step-desc">Enable warm-up on any inactive inbox. 3-day gap between steps enforced. Reply detection confirmed active. Config shown before applying.</div>
+          <div class="step-output">Config confirmed</div>
+        </div>
+
+        <div class="step-card blue-left">
+          <div class="step-num blue">Prompt 04</div>
+          <div class="step-title">Import Leads</div>
+          <div class="step-desc">9 fields mapped from Copy Ready tab. Filter: valid + catch_all only. Dedup against all active campaigns by email. Import summary shown first.</div>
+          <div class="step-output">Import summary confirmed</div>
+        </div>
+
+        <div class="step-card blue-left">
+          <div class="step-num blue">Prompt 05</div>
+          <div class="step-title">Launch + Verify</div>
+          <div class="step-desc">Campaign activated. Full launch summary: leads loaded, domains + daily caps, warmup scores, sequence steps, reply detection, send schedule, ETA.</div>
+          <div class="step-output">Launch checklist · screenshot it</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Speed comparison -->
+    <div class="speed-bar">
+      <div class="speed-item">
+        <div class="speed-value red">30–45 min</div>
+        <div class="speed-label">Instantly UI · manual</div>
+      </div>
+      <div style="font-size:18px; color:var(--tga-green); font-weight:700;">→</div>
+      <div class="speed-item">
+        <div class="speed-value green">&lt; 5 min</div>
+        <div class="speed-label">Claude Code · automated</div>
+      </div>
+      <div class="vdivider"></div>
+      <div class="speed-fact">
+        <div class="speed-fact-title">Domain Selection</div>
+        <div class="speed-fact-sub">Warmup scores, not age. A new domain warmed carefully beats a 3-month inbox that was hammered.</div>
+      </div>
+      <div class="vdivider"></div>
+      <div class="speed-fact">
+        <div class="speed-fact-title">Lead Import</div>
+        <div class="speed-fact-sub">Direct from Google Sheet. No CSV. No field mapping in the browser. No dedup you have to do yourself.</div>
+      </div>
+      <div class="vdivider"></div>
+      <div class="speed-fact">
+        <div class="speed-fact-title">Every Setting Enforced</div>
+        <div class="speed-fact-sub">Warm-up enabled. Reply detection on. Step gaps set. Skill defaults apply every time — nothing gets missed.</div>
+      </div>
+    </div>
+
+    <!-- Part B label -->
+    <div class="section-label-row">
+      <div class="section-label-line"></div>
+      <div class="section-label-text">Part B — Deliverability Diagnostics</div>
+      <div class="section-label-line"></div>
+    </div>
+
+    <!-- Part B container -->
+    <div class="section-container purple-accent">
+      <div class="section-header">
+        <div class="section-letter purple">B</div>
+        <div>
+          <div class="section-title">Inbox Placement + Domain Rotation</div>
+        </div>
+        <div class="section-meta">Run when bounce rate &gt; 3%</div>
+      </div>
+
+      <div class="steps-grid two-col">
+
+        <div class="step-card purple-left">
+          <div class="step-num purple">Prompt 06</div>
+          <div class="step-title">Inbox Placement Test</div>
+          <div class="step-desc">One inbox sampled per domain. Placement test fires against Gmail + Outlook seed addresses. Per-domain results returned: SpamAssassin score, blacklist status (domain + IP), inbox vs. spam rate by provider.<br><br>Flagged automatically: score &gt; 3 or any blacklist hit.</div>
+          <div class="step-output">Problem domains identified</div>
+        </div>
+
+        <div class="step-card purple-left">
+          <div class="step-num purple">Prompt 07</div>
+          <div class="step-title">Domain Rotation</div>
+          <div class="step-desc">Flagged inboxes removed from campaign. Standby pool queried — inboxes not assigned to any active campaign. Warmup scores pulled. Healthiest standby inboxes added in to maintain total daily send volume constant.<br><br>Before/after allocation table shown.</div>
+          <div class="step-output">Before/after domain allocation</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Skills output label -->
+    <div class="section-label-row">
+      <div class="section-label-line"></div>
+      <div class="section-label-text">Skills You Leave With</div>
+      <div class="section-label-line"></div>
+    </div>
+
+    <!-- Skills grid -->
+    <div class="skills-grid">
+
+      <div class="skill-card">
+        <div class="skill-label">Skill Output · Part A</div>
+        <div class="skill-name">/instantly-campaign-setup</div>
+        <div class="skill-desc">Creates and launches an Instantly campaign from one command. Reads Copy Ready tab, selects domains by warmup score, configures warm-up, imports leads, activates.</div>
+        <div class="skill-features">
+          <div class="skill-feature">Warmup score thresholds configurable at top of skill file</div>
+          <div class="skill-feature">Daily send limits enforced by default every run</div>
+          <div class="skill-feature">Usage: /instantly-campaign-setup [sheet-url] [campaign-name]</div>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-label">Skill Output · Part B</div>
+        <div class="skill-name">/instantly-deliverability</div>
+        <div class="skill-desc">Triggers inbox placement test from Claude Code. Surfaces per-domain SpamAssassin scores and blacklist status. Flags problem domains and rotates in standby inboxes automatically.</div>
+        <div class="skill-features">
+          <div class="skill-feature">SpamAssassin threshold configurable (default: 3)</div>
+          <div class="skill-feature">Blacklist flag configurable in skill settings</div>
+          <div class="skill-feature">Usage: /instantly-deliverability [campaign-name]</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Tools bar label -->
+    <div class="section-label-row">
+      <div class="section-label-line"></div>
+      <div class="section-label-text">Powered By</div>
+      <div class="section-label-line"></div>
+    </div>
+
+    <!-- Tools bar -->
+    <div class="tools-bar">
+      <div class="tools-label">Tools</div>
+      <div class="tool-chip">Instantly MCP</div>
+      <div class="tool-chip">Instantly REST API</div>
+      <div class="tool-chip">Google Sheets</div>
+      <div class="tool-chip">Claude Code</div>
+      <div class="tool-chip">Warmup Analytics</div>
+      <div class="tool-chip">Inbox Placement Test</div>
+      <div class="tool-chip">SpamAssassin</div>
+      <div class="tool-chip">Standby Domain Pool</div>
+    </div>
+
+    <!-- Next session -->
+    <div class="next-bar">
+      <div class="next-label">Up Next →</div>
+      <div class="vdivider"></div>
+      <div>
+        <div class="next-content-title">Session 5: The Full Machine</div>
+        <div class="next-content-desc">Refactor MCP calls to pure functions · Deploy pipeline to Trigger.dev as a durable workflow · Wire <code>/engage</code> as the single Slack trigger for your entire outbound machine</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      The GTM Architects · RevOps AI Curriculum · Session 4 of 6
+    </div>
+
+  </div>
+</body>
+</html>
