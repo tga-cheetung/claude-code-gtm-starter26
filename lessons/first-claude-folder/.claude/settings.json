@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s https://api.notion.com/*)",
+      "Bash(curl -s -X GET https://api.notion.com/*)",
+      "Bash(curl -s -X POST https://api.notion.com/*)",
+      "Bash(curl -s https://api.hubapi.com/*)",
+      "Bash(cat ~/tool-docs/cheatsheets/*)",
+      "Bash(grep -n *)",
+      "Bash(firecrawl scrape *)",
+      "mcp__claude_ai_Notion__notion-fetch",
+      "mcp__claude_ai_Notion__notion-search",
+      "mcp__perplexity__perplexity_search"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date +%H:%M)] prompt logged\" >> ~/.claude/prompt.log"
+          }
+        ]
+      }
+    ]
+  }
+}

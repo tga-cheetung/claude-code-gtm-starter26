@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>How Claude Code Actually Works — Lesson 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --tga-green: #0CDF79;
+  --tga-green-dark: #099F55;
+  --tga-bg: #0A0A0A;
+  --tga-surface: #333333;
+  --tga-surface-soft: #1F1F1F;
+  --tga-text: #E6E6E6;
+  --tga-text-muted: #B3B3B3;
+  --tga-text-label: #8F8F8F;
+  --tga-orange: #FF7033;
+  --tga-border: #292929;
+  --tga-disabled: #6B6B6B;
+  --tga-node-bg: #141414;
+  --tga-green-10: rgba(12, 223, 121, 0.1);
+  --tga-green-20: rgba(12, 223, 121, 0.2);
+  --tga-green-glow: rgba(12, 223, 121, 0.08);
+  --tga-blue: #3B82F6;
+  --tga-amber: #F59E0B;
+  --tga-purple: #8B5CF6;
+  --tga-font-heading: 'Poppins', sans-serif;
+  --tga-font-body: 'Inter', sans-serif;
+  --tga-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--tga-bg);
+  color: var(--tga-text);
+  font-family: var(--tga-font-body);
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+html {
+  scroll-snap-type: y mandatory;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(800px 500px at 80% 10%, rgba(12,223,121,0.04), transparent 60%),
+    radial-gradient(600px 400px at 10% 90%, rgba(59,130,246,0.03), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.slide {
+  scroll-snap-align: start;
+  min-height: 100vh;
+  padding: 80px 8vw;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-bottom: 1px solid var(--tga-border);
+  z-index: 1;
+}
+
+.slide-num {
+  position: absolute;
+  top: 32px;
+  right: 8vw;
+  font-family: var(--tga-font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--tga-text-label);
+  text-transform: uppercase;
+}
+
+.slide-num span { color: var(--tga-green); }
+
+.eyebrow {
+  font-family: var(--tga-font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2.5px;
+  color: var(--tga-green);
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+h1.title {
+  font-family: var(--tga-font-heading);
+  font-weight: 700;
+  font-size: clamp(40px, 6vw, 76px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--tga-text);
+  max-width: 16ch;
+}
+
+h1.title em {
+  font-style: normal;
+  color: var(--tga-green);
+}
+
+h2.section-title {
+  font-family: var(--tga-font-heading);
+  font-weight: 600;
+  font-size: clamp(28px, 4vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--tga-text);
+  max-width: 20ch;
+  margin-bottom: 32px;
+}
+
+h2.section-title em {
+  font-style: normal;
+  color: var(--tga-green);
+}
+
+p.lede {
+  font-family: var(--tga-font-body);
+  font-size: clamp(16px, 1.4vw, 19px);
+  line-height: 1.6;
+  color: var(--tga-text-muted);
+  max-width: 60ch;
+}
+
+p.lede strong { color: var(--tga-text); font-weight: 600; }
+
+.label {
+  font-family: var(--tga-font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--tga-text-label);
+  text-transform: uppercase;
+}
+
+.divider {
+  height: 1px;
+  background: var(--tga-border);
+  margin: 32px 0;
+  max-width: 80px;
+}
+
+/* Title slide */
+.title-slide {
+  justify-content: center;
+}
+.title-meta {
+  display: flex;
+  gap: 48px;
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--tga-border);
+  max-width: 720px;
+}
+.title-meta div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.title-meta .meta-label {
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--tga-text-label);
+}
+.title-meta .meta-value {
+  font-family: var(--tga-font-heading);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--tga-text);
+}
+
+/* Two column */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  margin-top: 48px;
+}
+
+.col {
+  border-left: 2px solid var(--tga-border);
+  padding-left: 24px;
+}
+
+.col.accent { border-left-color: var(--tga-green); }
+.col h3 {
+  font-family: var(--tga-font-heading);
+  font-weight: 600;
+  font-size: 22px;
+  color: var(--tga-text);
+  margin-bottom: 12px;
+}
+.col p {
+  font-family: var(--tga-font-body);
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--tga-text-muted);
+  max-width: 36ch;
+}
+
+/* File-type cards */
+.cards-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 48px;
+}
+
+.card {
+  background: var(--tga-surface-soft);
+  border: 1px solid var(--tga-border);
+  border-radius: 10px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  transition: border-color 200ms ease, transform 200ms ease;
+}
+.card:hover { border-color: var(--tga-green); transform: translateY(-2px); }
+.card .ext {
+  font-family: var(--tga-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tga-green);
+  letter-spacing: 1px;
+}
+.card h3 {
+  font-family: var(--tga-font-heading);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--tga-text);
+}
+.card p {
+  font-family: var(--tga-font-body);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--tga-text-muted);
+}
+.card .examples {
+  font-family: var(--tga-font-mono);
+  font-size: 11px;
+  color: var(--tga-text-label);
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px dashed var(--tga-border);
+}
+
+/* Code block */
+.code {
+  background: var(--tga-node-bg);
+  border: 1px solid var(--tga-border);
+  border-radius: 8px;
+  padding: 24px 28px;
+  font-family: var(--tga-font-mono);
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--tga-text-muted);
+  overflow-x: auto;
+  white-space: pre;
+  margin-top: 32px;
+  max-width: 880px;
+}
+.code .k { color: var(--tga-green); }
+.code .c { color: var(--tga-text-label); font-style: italic; }
+.code .s { color: var(--tga-amber); }
+.code .h { color: var(--tga-text); font-weight: 600; }
+
+/* Folder tree slide */
+.tree-wrap {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 48px;
+  margin-top: 40px;
+  align-items: start;
+}
+.tree {
+  background: var(--tga-node-bg);
+  border: 1px solid var(--tga-border);
+  border-radius: 10px;
+  padding: 36px 40px;
+  font-family: var(--tga-font-mono);
+  font-size: 14px;
+  line-height: 2;
+  color: var(--tga-text-muted);
+  white-space: pre;
+  overflow-x: auto;
+  margin: 0;
+  position: relative;
+}
+.tree::before {
+  content: "FILE TREE";
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-family: var(--tga-font-body);
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--tga-text-label);
+  font-weight: 500;
+}
+.tree .br   { color: #3a3a3a; }
+.tree .root { color: var(--tga-green); font-weight: 500; }
+.tree .dir  { color: var(--tga-text); font-weight: 500; }
+.tree .key  { color: var(--tga-green); font-weight: 500; }
+.tree .file { color: var(--tga-text-muted); }
+.tree .note { color: var(--tga-text-label); font-style: italic; }
+
+.tree-legend ul { list-style: none; }
+.tree-legend li {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--tga-border);
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+}
+.tree-legend li:last-child { border-bottom: none; }
+.tree-legend .name {
+  font-family: var(--tga-font-mono);
+  font-size: 13px;
+  color: var(--tga-green);
+  min-width: 120px;
+  flex-shrink: 0;
+}
+.tree-legend .desc {
+  font-family: var(--tga-font-body);
+  font-size: 14px;
+  color: var(--tga-text-muted);
+  line-height: 1.55;
+}
+
+/* Prompt-journey flow (slide 5) */
+.flow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-top: 36px;
+  align-items: stretch;
+}
+.flow-stage {
+  background: var(--tga-surface-soft);
+  border: 1px solid var(--tga-border);
+  border-top: 3px solid var(--tga-green);
+  border-radius: 10px;
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+}
+.flow-stage::after {
+  content: "→";
+  position: absolute;
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--tga-green);
+  font-size: 22px;
+  font-family: var(--tga-font-mono);
+  font-weight: 500;
+  z-index: 2;
+  background: var(--tga-bg);
+  padding: 0 4px;
+}
+.flow-stage:last-child::after { display: none; }
+.flow-stage .n {
+  font-family: var(--tga-font-mono);
+  font-size: 11px;
+  color: var(--tga-green);
+  letter-spacing: 2px;
+  font-weight: 500;
+}
+.flow-stage h3 {
+  font-family: var(--tga-font-heading);
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--tga-text);
+  line-height: 1.25;
+}
+.flow-stage .when {
+  font-family: var(--tga-font-body);
+  font-size: 12px;
+  color: var(--tga-text-muted);
+  line-height: 1.5;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--tga-border);
+}
+.flow-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.flow-item + .flow-item {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--tga-border);
+}
+.flow-item .path {
+  font-family: var(--tga-font-mono);
+  font-size: 12px;
+  color: var(--tga-green);
+  font-weight: 500;
+}
+.flow-item .label {
+  font-family: var(--tga-font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tga-text);
+}
+.flow-item .why {
+  font-family: var(--tga-font-body);
+  font-size: 12px;
+  color: var(--tga-text-muted);
+  line-height: 1.5;
+}
+
+/* Skill nesting visual */
+.nest {
+  margin-top: 40px;
+  display: grid;
+  gap: 12px;
+  max-width: 760px;
+}
+.nest-row {
+  background: var(--tga-surface-soft);
+  border: 1px solid var(--tga-border);
+  border-left: 3px solid var(--tga-green);
+  border-radius: 8px;
+  padding: 18px 22px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+.nest-row.indent-1 { margin-left: 32px; border-left-color: var(--tga-blue); }
+.nest-row.indent-2 { margin-left: 64px; border-left-color: var(--tga-amber); }
+.nest-row.indent-3 { margin-left: 64px; border-left-color: var(--tga-purple); }
+.nest-row .icon {
+  font-family: var(--tga-font-mono);
+  font-size: 11px;
+  color: var(--tga-text-label);
+  letter-spacing: 1.5px;
+  min-width: 64px;
+}
+.nest-row .name {
+  font-family: var(--tga-font-mono);
+  font-size: 14px;
+  color: var(--tga-text);
+  font-weight: 500;
+  min-width: 220px;
+}
+.nest-row .desc {
+  font-family: var(--tga-font-body);
+  font-size: 13px;
+  color: var(--tga-text-muted);
+}
+
+/* Memory index */
+.memory-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 32px;
+  align-items: start;
+}
+.bad, .good {
+  background: var(--tga-surface-soft);
+  border: 1px solid var(--tga-border);
+  border-radius: 10px;
+  padding: 28px;
+}
+.bad { border-top: 3px solid var(--tga-orange); }
+.good { border-top: 3px solid var(--tga-green); }
+.bad .head, .good .head {
+  font-family: var(--tga-font-body);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+.bad .head { color: var(--tga-orange); }
+.good .head { color: var(--tga-green); }
+.bad pre, .good pre {
+  font-family: var(--tga-font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--tga-text-muted);
+  white-space: pre-wrap;
+}
+.bad .stat, .good .stat {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--tga-border);
+  font-family: var(--tga-font-mono);
+  font-size: 12px;
+  color: var(--tga-text-label);
+}
+.bad .stat strong { color: var(--tga-orange); }
+.good .stat strong { color: var(--tga-green); }
+
+/* Git slide */
+.git-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 40px;
+}
+.git-cmd {
+  background: var(--tga-surface-soft);
+  border: 1px solid var(--tga-border);
+  border-radius: 10px;
+  padding: 28px;
+}
+.git-cmd .cmd {
+  font-family: var(--tga-font-mono);
+  font-size: 14px;
+  color: var(--tga-green);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+.git-cmd .what {
+  font-family: var(--tga-font-heading);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--tga-text);
+  margin-bottom: 8px;
+}
+.git-cmd .desc {
+  font-family: var(--tga-font-body);
+  font-size: 13px;
+  color: var(--tga-text-muted);
+  line-height: 1.55;
+}
+
+/* Outro */
+.outro-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 48px;
+  max-width: 900px;
+}
+.outro-actions .step {
+  background: var(--tga-surface-soft);
+  border: 1px solid var(--tga-border);
+  border-left: 3px solid var(--tga-green);
+  border-radius: 8px;
+  padding: 24px;
+}
+.outro-actions .n {
+  font-family: var(--tga-font-mono);
+  font-size: 11px;
+  color: var(--tga-green);
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+.outro-actions .step h4 {
+  font-family: var(--tga-font-heading);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--tga-text);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+.outro-actions .step p {
+  font-family: var(--tga-font-body);
+  font-size: 13px;
+  color: var(--tga-text-muted);
+  line-height: 1.55;
+}
+
+/* Progress dots */
+.progress {
+  position: fixed;
+  right: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10;
+}
+.progress a {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tga-border);
+  display: block;
+  transition: background 200ms ease, transform 200ms ease;
+}
+.progress a:hover { background: var(--tga-text-muted); transform: scale(1.3); }
+.progress a.active { background: var(--tga-green); transform: scale(1.4); }
+
+/* Scroll hint */
+.scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 8vw;
+  font-family: var(--tga-font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--tga-disabled);
+  text-transform: uppercase;
+}
+.scroll-hint::after {
+  content: "↓";
+  display: inline-block;
+  margin-left: 8px;
+  animation: bob 2s ease-in-out infinite;
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+/* Reveal on view */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 700ms ease, transform 700ms ease; }
+.reveal.in { opacity: 1; transform: translateY(0); }
+.reveal.d1 { transition-delay: 80ms; }
+.reveal.d2 { transition-delay: 160ms; }
+.reveal.d3 { transition-delay: 240ms; }
+.reveal.d4 { transition-delay: 320ms; }
+.reveal.d5 { transition-delay: 400ms; }
+
+/* Print — one slide per page, landscape 16:9 */
+@media print {
+  @page {
+    size: 1600px 900px;
+    margin: 0;
+  }
+  html { scroll-snap-type: none; }
+  body::before { display: none; }
+  .progress, .scroll-hint { display: none !important; }
+  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .slide {
+    width: 1600px;
+    height: 900px;
+    min-height: 900px;
+    max-height: 900px;
+    padding: 48px 80px;
+    page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    border-bottom: none;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .slide:last-child { page-break-after: auto; break-after: auto; }
+  .eyebrow { margin-bottom: 18px; }
+  /* Tighten oversized type for print */
+  h1.title { font-size: 64px; }
+  h2.section-title { font-size: 38px; margin-bottom: 18px; }
+  p.lede { font-size: 16px; }
+  /* Flow slide tightened for print */
+  .flow { margin-top: 24px; gap: 10px; }
+  .flow-stage { padding: 14px 12px; gap: 10px; }
+  .flow-stage h3 { font-size: 14px; }
+  .flow-stage .when { font-size: 11px; padding-bottom: 10px; }
+  .flow-item .label, .flow-item .path { font-size: 11px; }
+  .flow-item .why { font-size: 11px; line-height: 1.45; }
+  .flow-item + .flow-item { padding-top: 8px; }
+  .flow-stage::after { right: -12px; font-size: 16px; }
+  /* Tree slide tightened so 31 lines fit comfortably */
+  .tree-wrap { margin-top: 20px; gap: 36px; }
+  .tree {
+    font-size: 11px;
+    line-height: 1.55;
+    padding: 24px 28px;
+  }
+  .tree::before { font-size: 9px; top: 12px; right: 16px; }
+  .tree-legend li { padding: 9px 0; }
+  .tree-legend .name { font-size: 12px; min-width: 110px; }
+  .tree-legend .desc { font-size: 12px; line-height: 1.5; }
+  .code { font-size: 12px; line-height: 1.6; padding: 20px 24px; margin-top: 22px; }
+  .nest { margin-top: 24px; gap: 10px; }
+  .nest-row { padding: 12px 18px; }
+  .nest-row .name { font-size: 13px; }
+  .nest-row .desc { font-size: 12px; }
+  .cards-3 { margin-top: 28px; }
+  .card { padding: 22px; }
+  .git-grid { margin-top: 28px; }
+  .git-cmd, .outro-actions .step { padding: 22px; }
+  .memory-cols { margin-top: 22px; }
+  .bad, .good { padding: 22px; }
+  .bad pre, .good pre { font-size: 11px; line-height: 1.6; }
+  .two-col { margin-top: 28px; gap: 40px; }
+  .outro-actions { margin-top: 32px; }
+  .title-meta { margin-top: 40px; padding-top: 22px; }
+  .slide-num { top: 24px; right: 80px; }
+}
+
+/* Responsive — screen only, never print */
+@media screen and (max-width: 880px) {
+  .two-col, .cards-3, .git-grid, .outro-actions, .tree-wrap, .memory-cols, .flow {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .flow-stage::after { display: none; }
+  .progress { display: none; }
+  .slide { padding: 64px 24px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="progress" aria-label="slide progress">
+  <a href="#s1"></a><a href="#s2"></a><a href="#s3"></a><a href="#s4"></a>
+  <a href="#s5"></a><a href="#s6"></a><a href="#s7"></a><a href="#s8"></a>
+  <a href="#s9"></a><a href="#s10"></a><a href="#s11"></a>
+</nav>
+
+<!-- 1 — Title -->
+<section class="slide title-slide" id="s1">
+  <div class="slide-num">01<span>/11</span></div>
+  <h1 class="title reveal">How Claude Code <em>actually</em> works.</h1>
+  <p class="lede reveal d1" style="margin-top: 28px;">After install, most people just start typing and wonder why it feels inconsistent. That's because Claude Code isn't just a chat window — it reads your codebase and follows instructions you write into files.</p>
+  <div class="title-meta reveal d2">
+    <div><span class="meta-label">Output</span><span class="meta-value">Your first .claude folder</span></div>
+    <div><span class="meta-label">Audience</span><span class="meta-value">GTM practitioners</span></div>
+  </div>
+  <div class="scroll-hint">scroll</div>
+</section>
+
+<!-- 2 — Mental Model -->
+<section class="slide" id="s2">
+  <div class="slide-num">02<span>/11</span></div>
+  <div class="eyebrow reveal">Section 01 · The mental model</div>
+  <h2 class="section-title reveal d1">Two systems, working together.</h2>
+  <p class="lede reveal d2">Think of <strong>CLAUDE.md as your SDR's onboarding doc</strong>. It's the same every morning. The actual conversation? That's the call — different every time. One is deterministic. One is probabilistic. The system works when both are clean.</p>
+  <div class="two-col">
+    <div class="col reveal d3">
+      <span class="label">Deterministic</span>
+      <h3 style="margin-top:8px;">Files, commands, hooks.</h3>
+      <p>Always do the same thing. Settings.json, CLAUDE.md, skills, slash commands. You write them once, they fire predictably forever. This is the surface you control.</p>
+    </div>
+    <div class="col accent reveal d4">
+      <span class="label">Probabilistic</span>
+      <h3 style="margin-top:8px;">Claude's reasoning.</h3>
+      <p>Same input, different output. The model thinks fresh every turn. You can shape it with context (CLAUDE.md, memory, skills) — but you can't make it deterministic. Stop trying.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 — File types -->
+<section class="slide" id="s3">
+  <div class="slide-num">03<span>/11</span></div>
+  <div class="eyebrow reveal">Section 02 · The file types</div>
+  <h2 class="section-title reveal d1">Three file types do <em>most</em> of the work.</h2>
+  <p class="lede reveal d2">Open any production .claude folder and you'll see the same three extensions over and over. Each does one job.</p>
+  <div class="cards-3">
+    <div class="card reveal d3">
+      <span class="ext">.md</span>
+      <h3>Markdown</h3>
+      <p>The instructions Claude reads. CLAUDE.md, SKILL.md, rules, memory entries — all written in plain markdown. Human-readable, version-controllable, no syntax to learn.</p>
+      <span class="examples">CLAUDE.md · SKILL.md · MEMORY.md</span>
+    </div>
+    <div class="card reveal d4">
+      <span class="ext">.json</span>
+      <h3>JSON config</h3>
+      <p>The settings the harness reads. Permissions, hooks, environment defaults. Strict syntax — one missing comma breaks it. Lives at <em>.claude/settings.json</em>.</p>
+      <span class="examples">settings.json · .mcp.json</span>
+    </div>
+    <div class="card reveal d5">
+      <span class="ext">.ts / .py</span>
+      <h3>Code (when you need it)</h3>
+      <p>For pipelines that actually run — Trigger.dev tasks, scripts, helpers. Skills can call into these. Claude doesn't read them as instructions; it executes them.</p>
+      <span class="examples">tasks/*.ts · scripts/*.ts</span>
+    </div>
+  </div>
+</section>
+
+<!-- 4 — Prompt journey overview (was slide 5) -->
+<section class="slide" id="s4">
+  <div class="slide-num">04<span>/11</span></div>
+  <div class="eyebrow reveal">Section 03 · A prompt's journey</div>
+  <h2 class="section-title reveal d1">What happens when you <em>type a prompt</em>.</h2>
+  <p class="lede reveal d2">The <strong>.claude/</strong> folder isn't a thing you read top-to-bottom. It's a set of files Claude reaches for at different moments while it works. Follow a single prompt left-to-right — then we'll go deep on each stage.</p>
+  <div class="flow">
+    <div class="flow-stage reveal d3">
+      <span class="n">01 · TYPE</span>
+      <h3>You give Claude a task.</h3>
+      <div class="when">Where it starts. Just plain text in the terminal — same as ChatGPT, but inside your project folder.</div>
+      <div class="flow-item">
+        <span class="label">Your prompt</span>
+        <span class="why">"Draft three cold emails for this prospect."</span>
+      </div>
+    </div>
+
+    <div class="flow-stage reveal d3">
+      <span class="n">02 · BRIEF</span>
+      <h3>Claude reads its standing brief.</h3>
+      <div class="when">Loaded automatically every single prompt — like the briefing your SDR re-reads every morning.</div>
+      <div class="flow-item">
+        <span class="path">CLAUDE.md</span>
+        <span class="why">Project context — who you serve, what's on, where the source docs live.</span>
+      </div>
+      <div class="flow-item">
+        <span class="path">memory/MEMORY.md</span>
+        <span class="why">A notebook of things you've taught Claude in past sessions.</span>
+      </div>
+    </div>
+
+    <div class="flow-stage reveal d4">
+      <span class="n">03 · DECODE</span>
+      <h3>Claude figures out what you mean.</h3>
+      <div class="when">If you typed a /slash, it loads the matching workflow. Otherwise it interprets the prompt directly.</div>
+      <div class="flow-item">
+        <span class="path">.claude/skills/</span>
+        <span class="why">Saved workflows you trigger with <em>/skillname</em> — like <em>/gtm-snapshot</em>.</span>
+      </div>
+      <div class="flow-item">
+        <span class="path">.claude/commands/</span>
+        <span class="why">One-keystroke shortcuts for runs you do over and over.</span>
+      </div>
+    </div>
+
+    <div class="flow-stage reveal d4">
+      <span class="n">04 · WORK</span>
+      <h3>Claude does the task.</h3>
+      <div class="when">As Claude touches files, it pulls in the rulebooks and source-of-truth docs that apply.</div>
+      <div class="flow-item">
+        <span class="path">.claude/rules/</span>
+        <span class="why">House rules. Auto-load when you're editing certain files (e.g. banned phrases when writing copy).</span>
+      </div>
+      <div class="flow-item">
+        <span class="path">.claude/os/</span>
+        <span class="why">The source of truth — ICP, tone, current offer. Pulled in only when needed.</span>
+      </div>
+    </div>
+
+    <div class="flow-stage reveal d5">
+      <span class="n">05 · ACT</span>
+      <h3>Things actually run.</h3>
+      <div class="when">Before any command fires, the harness checks what's allowed. Hooks auto-fire on certain events.</div>
+      <div class="flow-item">
+        <span class="path">.claude/settings.json</span>
+        <span class="why">The permission slip. What can run without asking — plus hooks that fire automatically.</span>
+      </div>
+      <div class="flow-item">
+        <span class="label">↩ memory updates</span>
+        <span class="why">If Claude learned something worth keeping, it writes a new note for next time.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 — Stage 02 BRIEF · CLAUDE.md (was slide 4) -->
+<section class="slide" id="s5">
+  <div class="slide-num">05<span>/11</span></div>
+  <div class="eyebrow reveal">Stage 02 · Brief — the standing context</div>
+  <h2 class="section-title reveal d1">CLAUDE.md is an <em>index</em>, not a dump.</h2>
+  <p class="lede reveal d2">Every prompt loads CLAUDE.md into context. If it's 8,000 words of strategy, every conversation pays that token cost. Treat it like a homepage — point to the deep docs, don't paste them in.</p>
+  <div class="code reveal d3"><span class="c"># Acme Outbound — Project Context</span>
+
+<span class="h">## Outbound OS</span>
+
+Source-of-truth copy lives in <span class="s">.claude/os/</span>:
+- <span class="s">.claude/os/ICP.md</span>      <span class="c">— targeting + scoring</span>
+- <span class="s">.claude/os/TOV.md</span>      <span class="c">— tone of voice, banned phrases</span>
+- <span class="s">.claude/os/BRIEFING.md</span> <span class="c">— current offer + locked CTAs</span>
+
+Copy loading rules → <span class="s">.claude/rules/outbound-copy.md</span>
+<span class="k">↑ auto-loads when working in .claude/os/ or outbound-engine/</span></div>
+  <p class="lede reveal d4" style="margin-top: 28px; font-size: 14px;">Each line is a pointer. Claude only loads the deep doc when the work demands it — not on every "hi."</p>
+</section>
+
+<!-- 6 — Stage 02 BRIEF · Memory (was slide 8) -->
+<section class="slide" id="s6">
+  <div class="slide-num">06<span>/11</span></div>
+  <div class="eyebrow reveal">Stage 02 · Brief — persistent notes</div>
+  <h2 class="section-title reveal d1">Memory is an <em>index</em>. Same as CLAUDE.md.</h2>
+  <p class="lede reveal d2">MEMORY.md loads into every prompt. Each entry is one line — pointer + hook. The full memory body lives in its own file and only loads when relevant.</p>
+  <div class="memory-cols">
+    <div class="bad reveal d3">
+      <div class="head">Don't · token-heavy</div>
+<pre># MEMORY
+
+The user prefers no emojis in cold email
+copy because they tested it and found that
+emojis tank reply rates in their ICP which
+is B2B SaaS founders at $1-8M ARR. They
+review every draft before send so emojis
+trigger an instant rewrite. Also user is
+in PT timezone, prefers Inter, ...</pre>
+      <div class="stat">Token cost per prompt: <strong>~600</strong></div>
+    </div>
+    <div class="good reveal d4">
+      <div class="head">Do · index pattern</div>
+<pre># Memory Index
+
+- [No emojis in copy](feedback_no_emojis.md)
+  — instant rewrite trigger
+
+- [Q2 launch freeze](project_q2_launch.md)
+  — pipeline freeze through 2026-05-15
+
+- [HubSpot is source of truth](reference_hubspot.md)
+  — don't parallel-track in sheets</pre>
+      <div class="stat">Token cost per prompt: <strong>~80</strong></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 — Stage 03 DECODE → 04 WORK · Skills (unchanged position) -->
+<section class="slide" id="s7">
+  <div class="slide-num">07<span>/11</span></div>
+  <div class="eyebrow reveal">Stage 03 · Decode → 04 · Work</div>
+  <h2 class="section-title reveal d1">Skills can <em>nest</em> and <em>reference</em>.</h2>
+  <p class="lede reveal d2">A skill is a saved workflow you trigger with <strong>/skillname</strong>. The SKILL.md file holds the instructions — and as it runs, it pulls in rules, source-of-truth docs, and even other skills (this is where Stage 04 · Work happens).</p>
+  <div class="nest">
+    <div class="nest-row reveal d3">
+      <span class="icon">/skill</span>
+      <span class="name">/cold-email</span>
+      <span class="desc">Top-level entry point — write a sequence for one prospect.</span>
+    </div>
+    <div class="nest-row indent-1 reveal d4">
+      <span class="icon">loads →</span>
+      <span class="name">.claude/os/TOV.md + BRIEFING.md</span>
+      <span class="desc">Source-of-truth docs referenced inside SKILL.md.</span>
+    </div>
+    <div class="nest-row indent-2 reveal d4">
+      <span class="icon">loads →</span>
+      <span class="name">.claude/rules/outbound-copy.md</span>
+      <span class="desc">Auto-loaded by glob — banned phrases, template scoring.</span>
+    </div>
+    <div class="nest-row indent-3 reveal d5">
+      <span class="icon">calls →</span>
+      <span class="name">/gtm-snapshot</span>
+      <span class="desc">Nested skill invocation — pulls fresh ICP fit before drafting.</span>
+    </div>
+  </div>
+  <p class="lede reveal d5" style="margin-top: 32px; font-size: 14px;">The pattern: <strong>one skill, many references</strong>. Keep each skill narrow; let it pull what it needs.</p>
+</section>
+
+<!-- 8 — Stage 03 DECODE · Slash + subagents (was slide 9) -->
+<section class="slide" id="s8">
+  <div class="slide-num">08<span>/11</span></div>
+  <div class="eyebrow reveal">Stage 03 · Decode — alternate entry points</div>
+  <h2 class="section-title reveal d1">Two more ways to start a run.</h2>
+  <div class="two-col">
+    <div class="col reveal d2">
+      <span class="label">Slash commands</span>
+      <h3 style="margin-top:8px;">.claude/commands/*.md</h3>
+      <p>A markdown file with a description. Triggered by <em>/filename</em>. Use for repeatable runs you want one-keystroke access to — pipelines, checks, daily reviews.</p>
+    </div>
+    <div class="col accent reveal d3">
+      <span class="label">Subagents</span>
+      <h3 style="margin-top:8px;">.claude/agents/*.md</h3>
+      <p>A focused worker with its own tools and posture. Use for orchestration jobs Claude shouldn't drift on — campaign runs, code reviews, deployments.</p>
+    </div>
+  </div>
+  <p class="lede reveal d4" style="margin-top: 40px;"><strong>And /loops</strong> — Claude runs a prompt on an interval. Great for monitoring pipelines while you focus elsewhere. We go deep on these next lesson.</p>
+</section>
+
+<!-- 9 — Stage 05 ACT · settings.json (was slide 6) -->
+<section class="slide" id="s9">
+  <div class="slide-num">09<span>/11</span></div>
+  <div class="eyebrow reveal">Stage 05 · Act — the harness</div>
+  <h2 class="section-title reveal d1">settings.json — <em>permissions</em> + <em>hooks</em>.</h2>
+  <p class="lede reveal d2">Two jobs. <strong>Permissions</strong> tell the harness which commands run without asking. <strong>Hooks</strong> are shell commands that always fire on certain events. The harness executes both — Claude doesn't.</p>
+  <div class="code reveal d3">{
+  <span class="k">"permissions"</span>: {
+    <span class="k">"allow"</span>: [
+      <span class="s">"Bash(curl -s https://api.notion.com/*)"</span>,
+      <span class="s">"Bash(firecrawl scrape *)"</span>,
+      <span class="s">"mcp__claude_ai_Notion__notion-fetch"</span>
+    ]
+  },
+  <span class="k">"hooks"</span>: {
+    <span class="k">"UserPromptSubmit"</span>: [{
+      <span class="k">"hooks"</span>: [{
+        <span class="k">"type"</span>: <span class="s">"command"</span>,
+        <span class="k">"command"</span>: <span class="s">"echo prompt logged &gt;&gt; ~/.claude/log"</span>
+      }]
+    }]
+  }
+}</div>
+</section>
+
+<!-- 10 — GitHub basics -->
+<section class="slide" id="s10">
+  <div class="slide-num">10<span>/11</span></div>
+  <div class="eyebrow reveal">Bonus · Version control</div>
+  <h2 class="section-title reveal d1">GitHub, in <em>three commands</em>.</h2>
+  <p class="lede reveal d2">GitHub is where your <em>.claude/</em> folder lives between machines. A repo is a folder with history. Three commands cover 90% of what you need.</p>
+  <div class="git-grid">
+    <div class="git-cmd reveal d3">
+      <div class="cmd">git pull</div>
+      <div class="what">Get the latest</div>
+      <div class="desc">Sync the remote's changes down to your machine. Run before you start working — avoids conflicts later.</div>
+    </div>
+    <div class="git-cmd reveal d4">
+      <div class="cmd">git commit -m "..."</div>
+      <div class="what">Save a snapshot</div>
+      <div class="desc">Bundles your changes with a message. Stays local until you push. Commit early, commit often, write real messages.</div>
+    </div>
+    <div class="git-cmd reveal d5">
+      <div class="cmd">git push</div>
+      <div class="what">Send it up</div>
+      <div class="desc">Pushes your commits to GitHub. Now your laptop, your server, and your teammate all see the same .claude/ folder.</div>
+    </div>
+  </div>
+  <p class="lede reveal d5" style="margin-top: 32px; font-size: 14px;"><strong>Rule of thumb:</strong> never commit <em>.env</em>. Always commit <em>.claude/</em>.</p>
+</section>
+
+<!-- 11 — Outro -->
+<section class="slide" id="s11">
+  <div class="slide-num">11<span>/11</span></div>
+  <div class="eyebrow reveal">Outro · Your homework</div>
+  <h2 class="section-title reveal d1">Set up <em>your</em> .claude/ folder this week.</h2>
+  <p class="lede reveal d2">Bring it to the next call. We'll review it live and tighten the wiring. Real workspaces beat tutorials every time.</p>
+  <div class="outro-actions">
+    <div class="step reveal d3">
+      <div class="n">01</div>
+      <h4>Write your CLAUDE.md</h4>
+      <p>Index, not dump. Keep it under 200 lines. Point to your source docs.</p>
+    </div>
+    <div class="step reveal d4">
+      <div class="n">02</div>
+      <h4>Add one skill</h4>
+      <p>Pick the workflow you do most. Save it as <em>.claude/skills/&lt;name&gt;/SKILL.md</em>.</p>
+    </div>
+    <div class="step reveal d5">
+      <div class="n">03</div>
+      <h4>Commit + push</h4>
+      <p>git pull → git commit → git push. Your .claude/ folder now lives forever.</p>
+    </div>
+  </div>
+  <p class="lede reveal d5" style="margin-top: 56px; font-family: var(--tga-font-mono); font-size: 12px; color: var(--tga-text-label); letter-spacing: 1.5px; text-transform: uppercase;">Next lesson · Skills, slash commands &amp; loops in depth →</p>
+</section>
+
+<script>
+// Reveal on view
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('in');
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// Progress dot active state
+const slides = document.querySelectorAll('.slide');
+const dots = document.querySelectorAll('.progress a');
+const slideIo = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const idx = [...slides].indexOf(e.target);
+      dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+    }
+  });
+}, { threshold: 0.5 });
+slides.forEach(s => slideIo.observe(s));
+</script>
+
+</body>
+</html>

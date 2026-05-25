@@ -4,7 +4,7 @@ import { defineConfig } from "@trigger.dev/sdk/v3";
 // Trigger.dev dashboard URL or by running `npx trigger.dev@latest whoami`.
 // The value below is a placeholder — runs will fail until you update it.
 export default defineConfig({
-  project: "proj_REPLACE_WITH_YOUR_PROJECT_REF",
+  project: "proj_qnglxkgtllyyfbokueas",
   runtime: "node",
   logLevel: "log",
   // The max compute seconds a task is allowed to run. If the task run exceeds this duration, it will be stopped.
