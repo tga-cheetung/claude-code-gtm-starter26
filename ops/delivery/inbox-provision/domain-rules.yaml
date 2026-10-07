@@ -1,0 +1,57 @@
+# Mirror of ops/delivery/_lib/inbox_provision/domain-rules.yaml — keep in sync.
+# Canonical: _lib path (domain_rules.py). Referenced in inbox-provision/run.py error payloads.
+
+# Canonical secondary sending-domain shape rules (inbox-provision).
+# Enforced by domain_rules.py before purchase or InboxKit connect.
+version: 1
+
+shape:
+  # Apex .com and .co only — no .io, country TLDs, or multi-part public suffix tricks.
+  tld_allowlist: [".com", ".co"]
+  # When screening, expand each label to both allowlisted TLDs (see screen_domains.expand_com_co_pairs).
+  pair_com_and_co_on_screen: true
+  # ASCII letters only in the hostname label (no punycode IDN in v1).
+  forbid_chars: ["-", "_"]
+  forbid_digits: true
+  min_label_length: 4
+  max_label_length: 63
+  # Primary brand domain is never a secondary sender (checked separately from intake).
+
+reputation:
+  # Domain must not appear in the client estate blocklist (see estate_blocklist.py).
+  block_if_in_estate: true
+  # Reject if InboxKit workspace already holds the name (any status).
+  block_if_in_inboxkit: true
+  # Registrar availability required before human approves purchase (InboxKit /available).
+  require_registrar_available: true
+  # DNSBL lookups at screen + inbox-provision validate (dnsbl_check.py).
+  block_if_dnsbl_listed: true
+
+# DNSBL zones queried as {domain}.{zone} A records (127.0.0.x = hit).
+dnsbl:
+  enabled: true
+  block_if_listed: true
+  # When true, inconclusive lookups (timeout, Spamhaus policy on public DNS) block CLEAR.
+  block_if_inconclusive: false
+  control:
+    domain: test.surbl.org
+    zone: multi.surbl.org
+    expect_a: 127.0.0.254
+  providers:
+    - id: surbl_multi
+      zone: multi.surbl.org
+    - id: spamhaus_dbl
+      zone: dbl.spamhaus.org
+  # optional_providers: URIBL — see canonical _lib/domain-rules.yaml
+
+presentation:
+  # Human-readable summary for skill / CT approval cards.
+  summary: >
+    Secondary sending domains must be apex .com or .co, with no dashes, underscores, or digits
+    in the hostname. Screen expands each candidate label to both TLDs when pair_com_and_co_on_screen
+    is true. They must be CLEAR in the client sending estate (never used for prior cold send on
+    dead fleet, Hypertide/PVP, hub, suppress inventory, or Smartlead). Primary domain is never a sender.
+    DNSBL screen (SURBL multi + Spamhaus DBL) must be clean before purchase.
+  pricing_note: >
+    Domain screen lists Namecheap register (year 1) and InboxKit availability prices when APIs are reachable.
+    Year-1 register can differ from renewal; sizer uses monthly renewal planning rates in send_estate_sizer.yaml.

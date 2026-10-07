@@ -1,0 +1,121 @@
+id: standard-engine
+version: 2
+label: Standard Engine (post-SOW)
+description: >
+  Agency delivery DAG after SOW. Intake configures the spine; Day-1 fuses run in
+  parallel; rotate waits on warmup; report recurs in Operate.
+slack_channel: tga-agents
+trigger:
+  orchestrator_task: delivery-standard-engine
+  project: tga-delivery
+  deploy: ops/delivery/trigger/DEPLOY.md
+
+external_gates:
+  sow_signed:
+    kind: human
+    label: SOW signed and client folder exists
+
+stages:
+  intake:
+    label: Onboarding intake
+    needs: [sow_signed]
+    kind: human_form
+    gate: human
+    runner: intake
+    canon: os/BUILD-ARCHITECTURE.md#9
+    outputs: [handoff_contract, qa_gates, backtest_set]
+
+  inbox-provision:
+    label: Secondary domains + InboxKit + Smartlead standby
+    needs: [intake]
+    kind: automated_wait
+    gate: human_on_fail
+    runner: inbox-provision
+    parallel_group: intake_fuses
+    inputs:
+      - id: domain_count
+        label: How many secondary sending domains to procure
+        required: true
+      - id: selected_domains
+        label: Chosen domains (length must equal domain_count)
+      - id: inboxes_per_domain
+        default: 3
+        label: Google mailboxes per domain (house ROE)
+    waits:
+      - id: human:domain_count
+        label: CT confirms how many secondary domains
+      - id: human:domain_pick
+        label: CT picks domains (one shortlist pass per slot)
+      - id: vendor:nameserver_match
+        label: InboxKit nameserver_match=matched
+      - id: vendor:smartlead_standby
+        label: All target mailboxes loaded to standby (run inbox smartlead-sync poller)
+      - id: vendor:smartlead_tracking
+        label: Custom tracking CNAME + custom_tracking_url per domain (ROE Stage 5b — inbox smartlead-tracking)
+      - id: calendar:warmup_minimum
+        label: 21 days warmup before rotate (house standard)
+    hard_rules:
+      - Never START standby campaign
+      - Never load leads onto standby
+      - Secondary domains must pass ops/delivery/_lib/inbox_provision/domain-rules.yaml (.com, no dashes/digits, estate CLEAR, DNSBL CLEAR)
+      - Do not copy Hypertide Outlook limits onto Google inboxes
+      - Use curl + browser UA for InboxKit/Smartlead writes
+      - After mailbox buy, run inbox smartlead-sync --until-done (resumable poller)
+      - After sync complete, run inbox smartlead-tracking --verify-dns (Stage 5b) before send-estate register
+      - Hypertide backup domains use --estate hypertide and hypertide_tracking on intake (DNS via Hypertide v1 API)
+
+  campaign-hypothesis-lab:
+    label: ICP evidence and campaign-hypothesis lab
+    needs: [intake]
+    kind: judgment
+    gate: human
+    runner: campaign-hypothesis-lab
+    parallel_group: intake_fuses
+    canon: ops/delivery/campaign-hypothesis-lab/SKILL.md
+    outputs:
+      - Clients/<client>/build/icp/hypothesis-lab/<run>/handoff.json
+
+  signal-pack:
+    label: Approved strategy, list, TAM, backtest and sizing pack
+    needs: [campaign-hypothesis-lab]
+    kind: judgment
+    gate: human
+    runner: signal-pack
+    canon: os/pipeline-proof-playbook.md
+    outputs:
+      - Clients/<client>/build/pipeline-proof/proof-pack-YYYY-MM-DD.md
+
+  mmf:
+    label: Message / market fit plan
+    needs: [signal-pack]
+    kind: judgment
+    gate: human
+    runner: mmf
+    outputs: [angles, copy_constraints, channel_rules]
+
+  linkedin-stage:
+    label: LinkedIn staging + limits
+    needs: [intake, mmf]
+    kind: config_wait
+    runner: linkedin-stage
+    waits:
+      - id: human:li_identity
+        label: Sender identity and cookie/session path confirmed
+
+  rotate:
+    label: Attach inboxes to live campaigns (post-warmup)
+    needs: [inbox-provision, mmf]
+    kind: automated_wait
+    gate: human
+    runner: rotate
+    waits:
+      - id: calendar:warmup_pass
+        label: Warmup minimum satisfied (21d + placement check)
+
+  report:
+    label: Reporting + recommendations
+    needs: [rotate]
+    kind: recurring
+    runner: report
+    cadence: weekly
+    outputs: [digest, recommendations]
